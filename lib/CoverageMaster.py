@@ -6,9 +6,8 @@ import os
 import sys
 import math
 import json
-import time
+import argparse
 import commands
-from socket import *
 
 current_path = os.path.abspath(os.path.dirname(__file__))
 root_path = os.path.abspath(os.path.join(current_path, ".."))
@@ -21,11 +20,6 @@ try:
     import requests
 except:
     from thirdparts import requests
-
-try:
-    import argparse
-except:
-    from thirdparts import argparse
 
 try:
     import xmltodict
@@ -50,7 +44,7 @@ GLog = Log()
 COMMIT_HASH_LEN = 10
 
 
-class CoverageMaster:
+class CoverageMaster(object):
     def __init__(self, plus_name, template_name, host_ip, branch):
         self.p_record = PlusRecord(plus_name, template_name, host_ip, branch)
         self.file_server_hostname = "10.4.236.69"
@@ -96,7 +90,8 @@ class CoverageMaster:
 
         self.get_git_code(local_src_path, old_commit, new_commit, old_branch, jobname, job_url)
 
-        self.scp_output_to_remote(local_time, jobname)
+        # comment it out temporarily for qcs auto cov
+        # self.scp_output_to_remote(local_time, jobname)
 
     def get_remote_class(self, remote_class_path, local_class_path):
         GLog.info("get tested service classes")

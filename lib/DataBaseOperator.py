@@ -45,13 +45,13 @@ class DataBaseOperator(object):
 def get_jenkins_url_by_jobname(jobname):
     dbo = DataBaseOperator("yuntu", "10.32.89.8", "5002", "yuntu_w", "66SxmfCrJUif2k", "utf8")
 
-    sql = '''
+    sql = """
             select
                 case WHEN job_url is NULL THEN ""
                 else job_url
                 END as job_url
-            from cover_rage_job_org where job_name = '%s'
-        ''' % jobname
+            from cover_rage_job_org where job_name = '{}'
+        """.format(jobname)
     result = dbo.select_sql(sql)
 
     if len(result) > 0:

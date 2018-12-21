@@ -6,12 +6,6 @@ import os
 import sys
 from time import sleep
 
-__author__ = 'mengxiangfeng'
-
-'''
-提供plus抓取接口
-'''
-
 current_path = os.path.abspath(os.path.dirname(__file__))
 root_path = os.path.abspath(os.path.join(current_path, ".."))
 sys.path.insert(0, root_path)
@@ -21,10 +15,7 @@ except:
     from thirdparts import requests
 
 sys.path.insert(0, root_path + "/thirdparts")
-try:
-    from bs4 import BeautifulSoup
-except:
-    from bs4 import BeautifulSoup
+from bs4 import BeautifulSoup
 
 
 def get_login_data():
@@ -154,7 +145,7 @@ class PlusRecord(object):
                 return None
             return response.json()
 
-        except Exception, e:
+        except Exception as e:
             print("error %s" % e)
             return None
 
@@ -187,7 +178,7 @@ class PlusRecord(object):
             if response.status_code != 200:
                 return None
             return response.json()
-        except Exception, e:
+        except Exception as e:
             print("error %s" % e)
             return None
 
@@ -204,8 +195,8 @@ class PlusRecord(object):
 
 
 if __name__ == '__main__':
-    template_name = 'test'
-    plus_name = 'meituan.meishi.crm.ms'
+    template_n = 'test'
+    plus_n = 'meituan.meishi.crm.ms'
 
-    p_record = PlusRecord(plus_name, template_name, "10.5.245.163", "master")
+    p_record = PlusRecord(plus_n, template_n, "10.5.245.163", "master")
     p_record.output_init_info()
