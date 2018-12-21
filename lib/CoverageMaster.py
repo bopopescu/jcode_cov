@@ -10,23 +10,14 @@ import json
 import argparse
 
 current_path = os.path.abspath(os.path.dirname(__file__))
+proj_path = os.path.abspath(os.path.join(current_path, "../.."))
 root_path = os.path.abspath(os.path.join(current_path, ".."))
-sys.path.insert(0, root_path)
+sys.path.insert(0, proj_path)
 
-from lib.remote_cmd import *
-from lib.DataBaseOperator import *
-
-try:
-    import requests
-except:
-    from thirdparts import requests
-
-try:
-    import xmltodict
-except:
-    from thirdparts import xmltodict
-
-from lib.PlusInfo import PlusRecord
+from architect_env_coverage.lib.remote_cmd import *
+from architect_env_coverage.lib.PlusInfo import PlusRecord
+from architect_env_coverage.thirdparts import requests
+from architect_env_coverage.thirdparts import xmltodict
 
 reload(sys)
 sys.setdefaultencoding('utf8')
