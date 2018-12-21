@@ -55,9 +55,6 @@ class CoverageMaster(object):
                       self.remote_dump_jar_path)
 
         GLog.info("args[0]=ip, arg[1]=port, arg[2]=action")
-        # run_jar_cmd = "java -Dfile.encoding=utf-8 -jar %s %s %s clean" % (
-        #     self.remote_dump_jar_path, self.p_record.host, port)
-        # run_cmd(run_jar_cmd)
 
         run_jar_cmd = "java -jar /home/sankuai/architect-coverage-remote-dump.jar %s %s clean" % (
             self.p_record.host, port)
