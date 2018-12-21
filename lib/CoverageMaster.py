@@ -145,7 +145,7 @@ class CoverageMaster(object):
         self.coverage_info['src'] = local_src_path
 
         print(cmd)
-        (flag, output) = commands.getstatusoutput(cmd)
+        run_cmd(cmd)
         if len(os.listdir(src_space)) < 1:
             GLog.error("获取git失败")
             return

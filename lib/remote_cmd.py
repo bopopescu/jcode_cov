@@ -132,7 +132,3 @@ def run_cmd(cmd, exception_on_errors=True):
 def mkdir(path):
     cmd = "mkdir %s" % path
     run_cmd(cmd)
-
-
-if __name__ == '__main__':
-    remote_cmd("wangdongsheng@cq01-rdqa-dev007.cq01.baidu.com", "CAPHI2008", "ls; touch niubi")
