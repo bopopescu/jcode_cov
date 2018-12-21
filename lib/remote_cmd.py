@@ -4,7 +4,7 @@
 
 import os
 import subprocess
-from thirdparts import pexpect
+from qcs_env_coverage.thirdparts import pexpect
 
 
 def remote_cmd(remote, passwd, cmd):

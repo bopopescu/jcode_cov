@@ -9,10 +9,8 @@ from time import sleep
 current_path = os.path.abspath(os.path.dirname(__file__))
 root_path = os.path.abspath(os.path.join(current_path, ".."))
 sys.path.insert(0, root_path)
-try:
-    import requests
-except:
-    from thirdparts import requests
+
+from qcs_env_coverage.thirdparts import requests
 
 sys.path.insert(0, root_path + "/thirdparts")
 from bs4 import BeautifulSoup
