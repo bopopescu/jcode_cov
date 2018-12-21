@@ -8,7 +8,6 @@ import math
 import time
 import json
 import argparse
-import commands
 
 current_path = os.path.abspath(os.path.dirname(__file__))
 root_path = os.path.abspath(os.path.join(current_path, ".."))
