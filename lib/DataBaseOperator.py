@@ -10,7 +10,7 @@ current_path = os.path.abspath(os.path.dirname(__file__))
 root_path = os.path.abspath(os.path.join(current_path, ".."))
 sys.path.insert(0, root_path)
 
-from thirdparts import connector
+from qcs_env_coverage.thirdparts import connector
 
 
 class DataBaseOperator(object):
@@ -43,6 +43,10 @@ class DataBaseOperator(object):
 
 
 def get_jenkins_url_by_jobname(jobname):
+    """
+    :param jobname:
+    :return:
+    """
     dbo = DataBaseOperator("yuntu", "10.32.89.8", "5002", "yuntu_w", "66SxmfCrJUif2k", "utf8")
 
     sql = """

@@ -46,7 +46,11 @@ class CoverageMaster(object):
         self.coverage_info = {}
 
     def clean(self, port):
-        # 扔到远程服务 & 执行远程命令 ->jenkins salve不能远程清除server 覆盖率数据
+        """
+        push to remote server and execute remote command,
+        jenkins salve cannot remotely clear the server coverage data
+        :param port:
+        """
         scp_to_remote(self.p_record.host, 'sankuai', "", "/home/sankuai/",
                       self.remote_dump_jar_path)
 
@@ -60,6 +64,16 @@ class CoverageMaster(object):
         remote_cmd('sankuai@%s' % self.p_record.host, "", run_jar_cmd)
 
     def dump(self, remote_class_path, port, jobname, old_commit, new_commit, old_branch, job_url):
+        """
+        dump coverage data
+        :param remote_class_path:
+        :param port:
+        :param jobname:
+        :param old_commit:
+        :param new_commit:
+        :param old_branch:
+        :param job_url:
+        """
         GLog.info("args[0]=ip, arg[1]=port, arg[2]=action, arg[3]=exec path")
 
         mkdir(self.local_output_path)
@@ -85,6 +99,11 @@ class CoverageMaster(object):
         # self.scp_output_to_remote(local_time, jobname)
 
     def get_remote_class(self, remote_class_path, local_class_path):
+        """
+        fetch remote service class
+        :param remote_class_path:
+        :param local_class_path:
+        """
         GLog.info("get tested service classes")
         mkdir(local_class_path)
 
@@ -118,7 +137,14 @@ class CoverageMaster(object):
 
     def get_git_code(self, local_src_path, old_commit, new_commit, old_branch, jobname, job_url):
         """
-        获得搭建版本的git源代码
+        fetch service source code
+        :param local_src_path:
+        :param old_commit:
+        :param new_commit:
+        :param old_branch:
+        :param jobname:
+        :param job_url:
+        :return:
         """
 
         GLog.info("clone rd code to jenkins slave")
@@ -143,7 +169,15 @@ class CoverageMaster(object):
         self.get_diff_cov(old_commit, new_commit, src_space, old_branch, jobname, job_url)
 
     def get_diff_cov(self, old_commit, new_commit, src_space, old_branch, jobname, job_url):
-        """ 获得git diff 覆盖率 """
+        """ fetch git diff coverage
+        :param old_commit:
+        :param new_commit:
+        :param src_space:
+        :param old_branch:
+        :param jobname:
+        :param job_url:
+        :return:
+        """
 
         if old_branch is not None:
             GLog.info("填写--old-branch 获取%s&%s分支diff" % (old_branch, self.p_record.branch))
@@ -188,6 +222,10 @@ class CoverageMaster(object):
             self.get_diff_cov_to_html(src_space + "/diffcov.txt", source_diffcov_html, target_diffcov_html)
 
     def store_to_report_dir(self, output_path, src_space):
+        """
+        :param output_path:
+        :param src_space:
+        """
         cmd = "cp -r %s %s" % (os.path.join(output_path, "webroot_*"), output_path + "/diff2html")
         run_cmd(cmd)
         cmd = "cp %s %s" % (os.path.join(output_path, "*.exec"), output_path + "/diff2html")
@@ -198,6 +236,10 @@ class CoverageMaster(object):
         run_cmd(cmd)
 
     def get_new_commit(self, log_path):
+        """
+        :param log_path:
+        :return:
+        """
         fr = open(log_path, "r")
         line = fr.readline()
         fr.close()
@@ -206,6 +248,11 @@ class CoverageMaster(object):
         return None
 
     def get_jenkins_exclusion_pattern(self, jobname, job_url):
+        """
+        :param jobname:
+        :param job_url:
+        :return:
+        """
         # url = get_jenkins_url_by_jobname(jobname)
         url = job_url
         GLog.info(url)
@@ -216,6 +263,10 @@ class CoverageMaster(object):
         return self.get_jenkins_config(url + "/config.xml")
 
     def get_jenkins_config(self, url):
+        """
+        :param url:
+        :return:
+        """
         response = send_request(url)
         if response is None:
             return ""
@@ -235,6 +286,11 @@ class CoverageMaster(object):
         return config_value
 
     def get_config_value(self, path_list, value):
+        """
+        :param path_list:
+        :param value:
+        :return:
+        """
         for path in path_list:
             if value is None:
                 return ""
@@ -248,6 +304,12 @@ class CoverageMaster(object):
         return value.replace(" ", "")
 
     def get_diff_cov_to_single_html(self, source_path, target_path, filename, content):
+        """
+        :param source_path:
+        :param target_path:
+        :param filename:
+        :param content:
+        """
         fr = open(source_path + "/diffcov_subpage.html", "r")
         html = fr.read()
         fr.close()
@@ -257,6 +319,11 @@ class CoverageMaster(object):
         fw.close()
 
     def get_diff_cov_to_html(self, diffcov_txt, source_diffcov_html, target_diffcov_html):
+        """
+        :param diffcov_txt:
+        :param source_diffcov_html:
+        :param target_diffcov_html:
+        """
         target_path = target_diffcov_html[:target_diffcov_html.rfind("/")]
         source_path = source_diffcov_html[:source_diffcov_html.rfind("/")]
         fr = open(diffcov_txt, "r")
@@ -322,6 +389,11 @@ class CoverageMaster(object):
         fw.close()
 
     def scp_output_to_remote(self, date_path, jobname):
+        """
+        push output to remote server
+        :param date_path:
+        :param jobname:
+        """
         GLog.info("output to remote")
         list_dir = os.listdir(self.local_output_path)
         jacoco_flag = False
@@ -349,7 +421,7 @@ class CoverageMaster(object):
 
     def dump_git_info(self):
         """
-        将覆盖率信息dump到文件中
+        dump coverage to data file
         """
         fd = open('coverage.json', 'a')
         fd.write(json.dumps(self.coverage_info))
@@ -464,8 +536,3 @@ def test_generate():
 
 if __name__ == '__main__':
     main()
-    # test_generate()
-    # python lib/CoverageMaster.py -n test -t test -a clean
-
-    # python lib/CoverageMaster.py -n test -t test -a dump -p 6300 -c /Users/mengxiangfeng/learngit/\
-    # architect-new-jacoco-example/architect-jacoco-example/target/classes -j hehe

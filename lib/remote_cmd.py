@@ -8,6 +8,13 @@ from qcs_env_coverage.thirdparts import pexpect
 
 
 def remote_cmd(remote, passwd, cmd):
+    """
+    Execute remote commands
+    :param remote:
+    :param passwd:
+    :param cmd:
+    :return:
+    """
     ssh_cmd = 'ssh ' + remote + " \"" + cmd + "\""
     ssh = pexpect.spawn('/bin/bash', ['-c', ssh_cmd], timeout=10)
     pwd_count = 0
@@ -37,6 +44,12 @@ def remote_cmd(remote, passwd, cmd):
 def scp_to_remote(host, user, passwd, remote_path, local_path):
     """
     super scp use pexpect
+    :param host:
+    :param user:
+    :param passwd:
+    :param remote_path:
+    :param local_path:
+    :return:
     """
     remote_mk_dir_cmd = "sudo mkdir -p %s" % remote_path
     remote_cmd("%s@%s" % (user, host), passwd, remote_mk_dir_cmd)
@@ -69,6 +82,12 @@ def scp_to_remote(host, user, passwd, remote_path, local_path):
 def get_from_remote(host, user, passwd, remote_path, local_path):
     """
     super scp use pexpect
+    :param host:
+    :param user:
+    :param passwd:
+    :param remote_path:
+    :param local_path:
+    :return:
     """
     # This directory does not require super permissions
     cmd = "mkdir -p %s && chmod 777 %s" % (local_path, local_path)
@@ -106,6 +125,12 @@ def get_from_remote(host, user, passwd, remote_path, local_path):
 
 
 def run_cmd(cmd, exception_on_errors=True):
+    """
+    Execute command locally
+    :param cmd:
+    :param exception_on_errors:
+    :return:
+    """
     try:
         print("【cmd】" + cmd)
         process = subprocess.Popen(cmd, shell=True,
@@ -129,5 +154,8 @@ def run_cmd(cmd, exception_on_errors=True):
 
 
 def mkdir(path):
+    """
+    :param path:
+    """
     cmd = "mkdir %s" % path
     run_cmd(cmd)

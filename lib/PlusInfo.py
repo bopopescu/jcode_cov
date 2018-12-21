@@ -112,12 +112,15 @@ class PlusRecord(object):
         return {"Repository": git_url, "Commit": None}
 
     def get_commit_by_host(self):
-        "todo:plus提供任务详情接口==>获取host下commit"
+        """
+        TODO: Plus provides the task detail interface ==> to get the commit under host.
+        """
         return None
 
     def get_item_info_by_name(self):
         """
-        获得一个部署想详细信息
+        Get a deployment detail
+        :return:
         """
         req_url = "%s%s?release_name=%s" % (self.base_url, '/release_detail', self.plus_name)
         print(req_url)
@@ -129,8 +132,10 @@ class PlusRecord(object):
 
     def get_all_deploy_record_by_id(self, item_id):
         """
-        获取部署记录
-        目前使用丑陋实现，后续协调接口
+        Get deployment records.
+        The ugly implementation is used now, and the interface is later coordinated.
+        :param item_id:
+        :return:
         """
         url = "%s%s" % (self.base_url, "/release/%s/joblist?offset=0&limit=1000" % item_id)
         sleep(1)
@@ -149,7 +154,10 @@ class PlusRecord(object):
 
     def get_template_deploy_record_by_id(self, item_id):
         """
-        获取某模板下面环境的部署信息，模板为plus定义模板名称
+        Get template env deploy info, template.
+        The template is the name of the template defined by plus.
+        :param item_id:
+        :return:
         """
         records = []
         raw_detail = self.get_all_deploy_record_by_id(item_id)
@@ -161,6 +169,11 @@ class PlusRecord(object):
         return records
 
     def get_template_last_deploy_record_by_name(self, records, item_id):
+        """
+        :param records:
+        :param item_id:
+        :return:
+        """
         last_daemon_job_id = records[0]['DaemonJobId']
         last_detail_url = "%s/ui/release/%s/job/%s/detail" % (self.base_url, item_id, last_daemon_job_id)
         # last_detail_url = "%s/release/%s/job/%s/detail" % (self.base_url, item_id, last_daemon_job_id)
