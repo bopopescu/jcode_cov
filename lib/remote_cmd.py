@@ -2,14 +2,7 @@
 # -*- coding: UTF-8 -*-
 #
 
-
-__author__ = "wangdongsheng"
-__email__ = "wangdongsheng@baidu.com"
-__version__ = "1.0.0"
-
 import os
-import time
-import datetime
 import subprocess
 
 from thirdparts import pexpect
@@ -78,9 +71,10 @@ def get_from_remote(host, user, passwd, remote_path, local_path):
     """
     super scp use pexpect
     """
-    cmd = "sudo mkdir -p %s && sudo chmod 777 %s" % (local_path, local_path)
+    # This directory does not require super permissions
+    cmd = "mkdir -p %s && chmod 777 %s" % (local_path, local_path)
     if run_cmd(cmd) is False:
-        run_cmd("sudo mkdir -p %s" % local_path)
+        run_cmd("mkdir -p %s" % local_path)
 
     if not os.path.exists(local_path):
         print("mkdir %s failed" % local_path)
@@ -112,15 +106,25 @@ def get_from_remote(host, user, passwd, remote_path, local_path):
     return 0
 
 
-def run_cmd(cmd, timeout=1800):
-    print("【cmd】" + cmd)
-    end_time = datetime.datetime.now() + datetime.timedelta(seconds=timeout)
-    sub = subprocess.Popen(cmd, stdin=subprocess.PIPE, shell=True, bufsize=4096)
+def run_cmd(cmd, exception_on_errors=True):
+    try:
+        print("【cmd】" + cmd)
+        process = subprocess.Popen(cmd, shell=True,
+                                   stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+    except Exception as err:
+        print('FAILED - run command: %s, %s' % (cmd, err))
+        if exception_on_errors:
+            raise Exception(err)
 
-    while sub.poll() is None:
-        time.sleep(5)
-        if end_time <= datetime.datetime.now():
-            raise Exception("Timeout：%s" % cmd)
+    print('Please waiting..')
+    stdout, stderr = process.communicate()
+
+    return_code = process.returncode
+    if return_code != 0:
+        err_msg = 'FAILED - none zero exit code in %s' % cmd
+        print('%s; stdout: %s; stderr: %s' % (err_msg, stdout, stderr))
+        if exception_on_errors:
+            raise Exception(err_msg)
 
     return True
 
