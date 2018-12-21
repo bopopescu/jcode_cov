@@ -14,10 +14,10 @@ proj_path = os.path.abspath(os.path.join(current_path, "../.."))
 root_path = os.path.abspath(os.path.join(current_path, ".."))
 sys.path.insert(0, proj_path)
 
-from architect_env_coverage.lib.remote_cmd import *
-from architect_env_coverage.lib.PlusInfo import PlusRecord
-from architect_env_coverage.thirdparts import requests
-from architect_env_coverage.thirdparts import xmltodict
+from qcs_env_coverage.lib.remote_cmd import *
+from qcs_env_coverage.lib.PlusInfo import PlusRecord
+from qcs_env_coverage.thirdparts import requests
+from qcs_env_coverage.thirdparts import xmltodict
 
 reload(sys)
 sys.setdefaultencoding('utf8')
