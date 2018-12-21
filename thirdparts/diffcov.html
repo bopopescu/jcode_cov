@@ -1,0 +1,63 @@
+<!doctype html>
+<html>
+<head>
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>diff2html.js Demos</title>
+    <link rel="stylesheet" type="text/css" href="dist/diff2html.min.css">
+    <script type="text/javascript" src="dist/diff2html.min.js"></script>
+    <script type="text/javascript" src="dist/highlight.min.js"></script>
+</head>
+<body>
+
+<h3 style="margin-top:30px;">Git Diff Coverage Summary</h3>
+
+<table border="1px" class="pane">
+    <tbody><tr><th style="background-color:#e0e0e0;">新增代码行覆盖率
+
+    </th></tr>
+    <tr>
+        <td bgcolor="#FFFFFF">
+            <table class="percentgraph" cellpadding="0" cellspacing="0">
+                <tbody>
+                <tr class="percentgraph"><td style="width:40px" class="data">$diffCovRate%</td>
+                    <td class="percentgraph"><div class="percentgraph" style="width:100px">
+                        <div class="redbar" style="width:$diffMissRatepx"></div></div></td></tr>
+                <tr><td colspan="2"><span class="text"><b>M:</b> $missLines <b>C:</b> $covLines</span></td></tr>
+                </tbody>
+            </table>
+        </td>
+    </tr>
+    </tbody>
+</table>
+
+
+<h5 class="status">
+    <!--<span>新增代码覆盖率计算公式 = (新增代码部分覆盖+新增代码全覆盖) / (新增代码部分覆盖+新增代码全覆盖+新增代码没覆盖）* 100%</span>-->
+    <span>新增代码覆盖率计算公式 = ( </span>
+    <span style="background-color:#dfd; border-color:#b4e2b4; color: #FFD700;">   新增代码部分覆盖 </span>
+    <span>    + </span>
+    <span style="background-color:#dfd; border-color:#b4e2b4; ">    新增代码全覆盖 </span>
+    <span>    ) / ( </span>
+    <span style="background-color:#dfd; border-color:#b4e2b4; color: #FFD700;">    新增代码部分覆盖 </span>
+    <span>    + </span>
+    <span style="background-color:#dfd; border-color:#b4e2b4; ">    新增代码全覆盖 </span>
+    <span>    + </span>
+    <span style="background-color:#dfd; border-color:#b4e2b4; color: #ff9090;">    新增代码没覆盖</span>
+    <span>    ）* 100%</span>
+</h5>
+
+<h3 style="margin-top:30px;">Coverage Breakdown by Git Diff File</h3>
+<h5 class="status">
+    <span style="color: red">备注:</span>
+    <span style="background-color:#dfd; border-color:#b4e2b4; color: #EE82EE;">没有获取到新增代码覆盖信息</span> &nbsp;&nbsp;
+    <span style="background-color:#dfd; border-color:#b4e2b4; color: #C0C0C0;">新增代码不用覆盖</span> &nbsp; &nbsp;
+    <span style="background-color:#dfd; border-color:#b4e2b4; color: #ff9090;">新增代码没覆盖</span> &nbsp; &nbsp;
+    <span style="background-color:#dfd; border-color:#b4e2b4; color: #FFD700;">新增代码部分覆盖</span>
+    <span style="background-color:#dfd; border-color:#b4e2b4; "> 新增代码全覆盖 </span>
+</h5>
+<h3 style="margin-top:30px;"> Git Diff File List</h3>
+<table class="spikeDataTable"><tbody>$fileList</tbody></table>
+</body>
+</html>
