@@ -136,7 +136,7 @@ def run_cmd(cmd, exception_on_errors=True):
         process = subprocess.Popen(cmd, shell=True,
                                    stdout=subprocess.PIPE, stderr=subprocess.PIPE)
     except Exception as err:
-        print('FAILED - run command: %s, %s' % (cmd, err))
+        print('FAILED - run command: {}, {}'.format(cmd, err))
         if exception_on_errors:
             raise Exception(err)
 
@@ -146,7 +146,7 @@ def run_cmd(cmd, exception_on_errors=True):
     return_code = process.returncode
     if return_code != 0:
         err_msg = 'FAILED - none zero exit code in %s' % cmd
-        print('%s; stdout: %s; stderr: %s' % (err_msg, stdout, stderr))
+        print('{}; stdout: {}; stderr: {}'.format(err_msg, stdout, stderr))
         if exception_on_errors:
             raise Exception(err_msg)
 

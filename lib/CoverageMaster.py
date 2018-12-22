@@ -5,8 +5,8 @@
 import os
 import sys
 import math
-import time
 import json
+import time
 import argparse
 
 current_path = os.path.abspath(os.path.dirname(__file__))
@@ -14,25 +14,13 @@ proj_path = os.path.abspath(os.path.join(current_path, "../.."))
 root_path = os.path.abspath(os.path.join(current_path, ".."))
 sys.path.insert(0, proj_path)
 
-from qcs_env_coverage.lib.remote_cmd import *
+from qcs_env_coverage.lib.CovUtils import *
+from qcs_env_coverage.lib.CovLogger import CovLog
 from qcs_env_coverage.lib.PlusInfo import PlusRecord
 from qcs_env_coverage.thirdparts import requests
 from qcs_env_coverage.thirdparts import xmltodict
 
-reload(sys)
-sys.setdefaultencoding('utf8')
-
-
-class Log(object):
-    def info(self, msg):
-        print("【Info %s】 %s" % (time.strftime('%Y-%m-%d %H:%M:%S', time.localtime(time.time())), msg))
-
-    def error(self, msg):
-        print("【Error %s】 %s" % (time.strftime('%Y-%m-%d %H:%M:%S', time.localtime(time.time())), msg))
-
-
-GLog = Log()
-COMMIT_HASH_LEN = 10
+clog = CovLog()
 
 
 class CoverageMaster(object):
@@ -54,7 +42,7 @@ class CoverageMaster(object):
         scp_to_remote(self.p_record.host, 'sankuai', "", "/home/sankuai/",
                       self.remote_dump_jar_path)
 
-        GLog.info("args[0]=ip, arg[1]=port, arg[2]=action")
+        clog.info("args[0]=ip, arg[1]=port, arg[2]=action")
 
         run_jar_cmd = "java -jar /home/sankuai/architect-coverage-remote-dump.jar %s %s clean" % (
             self.p_record.host, port)
@@ -71,7 +59,7 @@ class CoverageMaster(object):
         :param old_branch:
         :param job_url:
         """
-        GLog.info("args[0]=ip, arg[1]=port, arg[2]=action, arg[3]=exec path")
+        clog.info("args[0]=ip, arg[1]=port, arg[2]=action, arg[3]=exec path")
 
         mkdir(self.local_output_path)
 
@@ -88,7 +76,8 @@ class CoverageMaster(object):
         self.get_remote_class(remote_class_path, local_class_path)
 
         local_src_path = os.path.join(self.local_output_path, "src_%s%s" % (self.p_record.plus_name, local_time))
-        jobname = os.path.abspath(os.path.join(os.path.dirname(__file__), os.pardir, os.pardir)).split('/')[-1]
+        # comment it out temporarily for qcs auto cov
+        # jobname = os.path.abspath(os.path.join(os.path.dirname(__file__), os.pardir, os.pardir)).split('/')[-1]
 
         self.get_git_code(local_src_path, old_commit, new_commit, old_branch, jobname, job_url)
 
@@ -101,7 +90,7 @@ class CoverageMaster(object):
         :param remote_class_path:
         :param local_class_path:
         """
-        GLog.info("get tested service classes")
+        clog.info("get tested service classes")
         mkdir(local_class_path)
 
         remote_class_path_list = remote_class_path.split(",")
@@ -144,13 +133,14 @@ class CoverageMaster(object):
         :return:
         """
 
-        GLog.info("clone rd code to jenkins slave")
+        clog.info("clone rd code to jenkins slave")
         mkdir(local_src_path)
         src_space = local_src_path + os.sep + self.p_record.git.split('/')[-1].rsplit('.', 1)[0]
 
         cmd = 'cd %s && git clone %s && cd %s && ' % (local_src_path, self.p_record.git, src_space)
 
-        if self.p_record.commit is not None and len(self.p_record.commit) > COMMIT_HASH_LEN:
+        commit_hash_len = 10
+        if self.p_record.commit is not None and len(self.p_record.commit) > commit_hash_len:
             cmd += "git checkout %s" % self.p_record.commit
         else:
             cmd += "git checkout %s" % self.p_record.branch
@@ -160,7 +150,7 @@ class CoverageMaster(object):
         print(cmd)
         run_cmd(cmd)
         if len(os.listdir(src_space)) < 1:
-            GLog.error("获取git失败")
+            clog.error("获取git失败")
             return
 
         self.get_diff_cov(old_commit, new_commit, src_space, old_branch, jobname, job_url)
@@ -177,14 +167,14 @@ class CoverageMaster(object):
         """
 
         if old_branch is not None:
-            GLog.info("填写--old-branch 获取%s&%s分支diff" % (old_branch, self.p_record.branch))
+            clog.info("填写--old-branch 获取%s&%s分支diff" % (old_branch, self.p_record.branch))
             old_commit = old_branch
             new_commit = self.p_record.branch
             cmd = "cd %s && git checkout %s && git checkout %s " % (src_space, old_commit, new_commit)
             run_cmd(cmd)
         else:
             if old_commit is None:
-                GLog.info("未填写--old-commit git源代码老版本参数，无法获取git增量")
+                clog.info("未填写--old-commit git源代码老版本参数，无法获取git增量")
                 return
 
             if new_commit is None:
@@ -194,7 +184,7 @@ class CoverageMaster(object):
                 new_commit = self.get_new_commit(src_space + "/git.log")
                 run_cmd("rm -rf %s/git.log" % src_space)
                 if new_commit is None:
-                    GLog.error("未填写--new-commit git源代码新版本参数，并且git log未获取到最新commit")
+                    clog.error("未填写--new-commit git源代码新版本参数，并且git log未获取到最新commit")
                     return
 
         cmd = "cd %s && git diff %s %s >diff.txt" % (src_space, old_commit, new_commit)
@@ -252,7 +242,7 @@ class CoverageMaster(object):
         """
         # url = get_jenkins_url_by_jobname(jobname)
         url = job_url
-        GLog.info(url)
+        clog.info(url)
 
         if url is None:
             return ""
@@ -391,7 +381,7 @@ class CoverageMaster(object):
         :param date_path:
         :param jobname:
         """
-        GLog.info("output to remote")
+        clog.info("output to remote")
         list_dir = os.listdir(self.local_output_path)
         jacoco_flag = False
         class_flag = False
@@ -414,7 +404,7 @@ class CoverageMaster(object):
 
             scp_to_remote(self.file_server_hostname, 'root', self.file_server_passwd, date_path, self.local_output_path)
         else:
-            GLog.error("lack jacoco.exec and classes")
+            clog.error("lack jacoco.exec and classes")
 
     def dump_git_info(self):
         """
@@ -436,7 +426,7 @@ def send_request(url):
             response = requests.get(url, headers={"Authorization": authorization})
         except Exception as e:
             print(e.message)
-            GLog.error("requests.exceptions.ConnectionError try again")
+            clog.error("requests.exceptions.ConnectionError try again")
             try_count += 1
             time.sleep(2)
             continue
@@ -447,7 +437,7 @@ def send_request(url):
             return json.loads(response.text)
         except:
             return response.text
-    GLog.info("jenkins job %s error, or requests.exceptions.ConnectionError " % url)
+    clog.info("jenkins job %s error, or requests.exceptions.ConnectionError " % url)
     return None
 
 
@@ -474,44 +464,44 @@ def main():
     port = args.port
     host_ip = args.host_ip
     branch = args.branch
-    GLog.info("命令行参数:" + str(args))
+    clog.info("命令行参数:" + str(args))
     if plus_name is None:
-        GLog.error("未填写-n plusname发布项参数")
+        clog.error("未填写-n plusname发布项参数")
         return
 
     if host_ip is None:
-        GLog.error("未填写-h 被测服务ip")
+        clog.error("未填写-h 被测服务ip")
         return
 
     if template_name is None:
-        GLog.info("未填写模板类型，默认为test模板")
+        clog.info("未填写模板类型，默认为test模板")
         template_name = "test"
 
     if port is None:
-        GLog.info("未填写port，默认为6300")
+        clog.info("未填写port，默认为6300")
         port = "6300"
 
     if branch is None:
-        GLog.info("未填写代码branch，默认为master")
+        clog.info("未填写代码branch，默认为master")
         branch = "master"
 
     coverage_master = CoverageMaster(plus_name, template_name, host_ip, branch)
 
     if not coverage_master.p_record.flag:
-        GLog.error("获取plus配置失败")
+        clog.error("获取plus配置失败")
         return
 
     if action == 'clean':
-        GLog.info("clean操作：开始清理覆盖率数据")
+        clog.info("clean操作：开始清理覆盖率数据")
         coverage_master.clean(port)
 
     elif action == 'dump':
-        GLog.info("dump操作：开始dump远程覆盖率数据")
+        clog.info("dump操作：开始dump远程覆盖率数据")
         jobname = args.jobname
         classes = args.classes
 
         if classes is None:
-            GLog.error("dump操作未填写-c classes参数")
+            clog.error("dump操作未填写-c classes参数")
             return
 
         coverage_master.dump(classes, port, jobname, args.old_commit, args.new_commit, args.old_branch, args.job_url)
@@ -532,4 +522,7 @@ def test_generate():
 
 
 if __name__ == '__main__':
+    if sys.version_info[0] < 3:
+        reload(sys)
+        sys.setdefaultencoding('utf-8')
     main()
