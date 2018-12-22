@@ -1,65 +1,64 @@
-# MySQL Connector/Python - MySQL driver written in Python.
-
-import django
-
-if django.VERSION >= (1, 8):
-    from django.db.backends.base.validation import BaseDatabaseValidation
-else:
-    from django.db.backends import BaseDatabaseValidation
-
-if django.VERSION < (1, 7):
-    from django.db import models
-else:
-    from django.core import checks
-    from django.db import connection
+from django.core import checks
+from django.db.backends.base.validation import BaseDatabaseValidation
+from django.utils.version import get_docs_version
 
 
 class DatabaseValidation(BaseDatabaseValidation):
-    if django.VERSION < (1, 7):
-        def validate_field(self, errors, opts, f):
-            """
-            MySQL has the following field length restriction:
-            No character (varchar) fields can have a length exceeding 255
-            characters if they have a unique index on them.
-            """
-            varchar_fields = (models.CharField,
-                              models.CommaSeparatedIntegerField,
-                              models.SlugField)
-            if isinstance(f, varchar_fields) and f.max_length > 255 and f.unique:
-                msg = ('"%(name)s": %(cls)s cannot have a "max_length" greater '
-                       'than 255 when using "unique=True".')
-                errors.add(opts, msg % {'name': f.name,
-                                        'cls': f.__class__.__name__})
+    def check(self, **kwargs):
+        issues = super(DatabaseValidation, self).check(**kwargs)
+        issues.extend(self._check_sql_mode(**kwargs))
+        return issues
 
-    else:
-        def check_field(self, field, **kwargs):
-            """
-            MySQL has the following field length restriction:
-            No character (varchar) fields can have a length exceeding 255
-            characters if they have a unique index on them.
-            """
-            # Django 1.7
-            errors = super(DatabaseValidation, self).check_field(field,
-                                                                 **kwargs)
+    def _check_sql_mode(self, **kwargs):
+        with self.connection.cursor() as cursor:
+            cursor.execute("SELECT @@sql_mode")
+            sql_mode = cursor.fetchone()
+        modes = set(sql_mode[0].split(',') if sql_mode else ())
+        if not (modes & {'STRICT_TRANS_TABLES', 'STRICT_ALL_TABLES'}):
+            return [checks.Warning(
+                "MySQL Strict Mode is not set for database connection '%s'" % self.connection.alias,
+                hint="MySQL's Strict Mode fixes many data integrity problems in MySQL, "
+                     "such as data truncation upon insertion, by escalating warnings into "
+                     "errors. It is strongly recommended you activate it. See: "
+                     "https://docs.djangoproject.com/en/%s/ref/databases/#mysql-sql-mode"
+                     % (get_docs_version(),),
+                id='mysql.W002',
+            )]
+        return []
 
-            # Ignore any related fields.
-            if getattr(field, 'rel', None) is None:
-                field_type = field.db_type(connection)
+    def check_field(self, field, **kwargs):
+        """
+        MySQL has the following field length restriction:
+        No character (varchar) fields can have a length exceeding 255
+        characters if they have a unique index on them.
+        """
+        errors = super(DatabaseValidation, self).check_field(field, **kwargs)
 
-                if field_type is None:
-                    return errors
-
-                if (field_type.startswith('varchar')  # Look for CharFields...
-                        and field.unique  # ... that are unique
-                        and (field.max_length is None or
-                                     int(field.max_length) > 255)):
-                    errors.append(
-                        checks.Error(
-                            ('MySQL does not allow unique CharFields to have a '
-                             'max_length > 255.'),
-                            hint=None,
-                            obj=field,
-                            id='mysql.E001',
-                        )
-                )
+        # Ignore any related fields.
+        if getattr(field, 'remote_field', None):
             return errors
+
+        # Ignore fields with unsupported features.
+        db_supports_all_required_features = all(
+            getattr(self.connection.features, feature, False)
+            for feature in field.model._meta.required_db_features
+        )
+        if not db_supports_all_required_features:
+            return errors
+
+        field_type = field.db_type(self.connection)
+
+        # Ignore non-concrete fields.
+        if field_type is None:
+            return errors
+
+        if (field_type.startswith('varchar') and field.unique and
+                (field.max_length is None or int(field.max_length) > 255)):
+            errors.append(
+                checks.Error(
+                    'MySQL does not allow unique CharFields to have a max_length > 255.',
+                    obj=field,
+                    id='mysql.E001',
+                )
+            )
+        return errors

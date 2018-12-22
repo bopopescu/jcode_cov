@@ -1,251 +1,136 @@
-# MySQL Connector/Python - MySQL driver written in Python.
-
-"""Django database Backend using MySQL Connector/Python
-
-This Django database backend is heavily based on the MySQL backend coming
-with Django.
-
-Changes include:
-* Support for microseconds (MySQL 5.6.3 and later)
-* Using INFORMATION_SCHEMA where possible
-* Using new defaults for, for example SQL_AUTO_IS_NULL
-
-Requires and comes with MySQL Connector/Python v1.1 and later:
-    http://dev.mysql.com/downloads/connector/python/
 """
+MySQL database backend for Django.
 
-
+Requires mysqlclient: https://pypi.python.org/pypi/mysqlclient/
+MySQLdb is supported for Python 2 only: http://sourceforge.net/projects/mysql-python
+"""
 from __future__ import unicode_literals
 
-from datetime import datetime
+import datetime
+import re
 import sys
 import warnings
 
-import django
-from django.utils.functional import cached_property
-
-try:
-    import mysql.connector
-    from mysql.connector.conversion import MySQLConverter, MySQLConverterBase
-    from mysql.connector.catch23 import PY2
-except ImportError as err:
-    from django.core.exceptions import ImproperlyConfigured
-    raise ImproperlyConfigured(
-        "Error loading mysql.connector module: {0}".format(err))
-
-try:
-    version = mysql.connector.__version_info__[0:3]
-except AttributeError:
-    from mysql.connector.version import VERSION
-    version = VERSION[0:3]
-
-try:
-    from _mysql_connector import datetime_to_mysql, time_to_mysql
-except ImportError:
-    HAVE_CEXT = False
-else:
-    HAVE_CEXT = True
-
-if version < (1, 1):
-    from django.core.exceptions import ImproperlyConfigured
-    raise ImproperlyConfigured(
-        "MySQL Connector/Python v1.1.0 or newer "
-        "is required; you have %s" % mysql.connector.__version__)
-
-from django.db import utils
-if django.VERSION < (1, 7):
-    from django.db.backends import util
-else:
-    from django.db.backends import utils as backend_utils
-if django.VERSION >= (1, 8):
-    from django.db.backends.base.base import BaseDatabaseWrapper
-else:
-    from django.db.backends import BaseDatabaseWrapper
-
-from django.db.backends.signals import connection_created
-from django.utils import (six, timezone, dateparse)
 from django.conf import settings
+from django.core.exceptions import ImproperlyConfigured
+from django.db import utils
+from django.db.backends import utils as backend_utils
+from django.db.backends.base.base import BaseDatabaseWrapper
+from django.utils import six, timezone
+from django.utils.deprecation import RemovedInDjango20Warning
+from django.utils.encoding import force_str
+from django.utils.functional import cached_property
+from django.utils.safestring import SafeBytes, SafeText
 
-from mysql.connector.django.client import DatabaseClient
-from mysql.connector.django.creation import DatabaseCreation
-from mysql.connector.django.introspection import DatabaseIntrospection
-from mysql.connector.django.validation import DatabaseValidation
-from mysql.connector.django.features import DatabaseFeatures
-from mysql.connector.django.operations import DatabaseOperations
-if django.VERSION >= (1, 7):
-    from mysql.connector.django.schema import DatabaseSchemaEditor
+try:
+    import MySQLdb as Database
+except ImportError as e:
+    raise ImproperlyConfigured(
+        'Error loading MySQLdb module: %s.\n'
+        'Did you install mysqlclient or MySQL-python?' % e
+    )
+
+from MySQLdb.constants import CLIENT, FIELD_TYPE                # isort:skip
+from MySQLdb.converters import Thing2Literal, conversions       # isort:skip
+
+# Some of these import MySQLdb, so import them after checking if it's installed.
+from .client import DatabaseClient                          # isort:skip
+from .creation import DatabaseCreation                      # isort:skip
+from .features import DatabaseFeatures                      # isort:skip
+from .introspection import DatabaseIntrospection            # isort:skip
+from .operations import DatabaseOperations                  # isort:skip
+from .schema import DatabaseSchemaEditor                    # isort:skip
+from .validation import DatabaseValidation                  # isort:skip
+
+version = Database.version_info
+if version < (1, 2, 3):
+    raise ImproperlyConfigured(
+        "MySQLdb/mysqlclient 1.2.3 or newer is required; you have %s"
+        % Database.__version__
+    )
 
 
-DatabaseError = mysql.connector.DatabaseError
-IntegrityError = mysql.connector.IntegrityError
-NotSupportedError = mysql.connector.NotSupportedError
-
-
-def adapt_datetime_with_timezone_support(value):
-    # Equivalent to DateTimeField.get_db_prep_value. Used only by raw SQL.
-    if settings.USE_TZ:
-        if timezone.is_naive(value):
-            warnings.warn("MySQL received a naive datetime (%s)"
-                          " while time zone support is active." % value,
-                          RuntimeWarning)
-            default_timezone = timezone.get_default_timezone()
-            value = timezone.make_aware(value, default_timezone)
+def adapt_datetime_warn_on_aware_datetime(value, conv):
+    # Remove this function and rely on the default adapter in Django 2.0.
+    if settings.USE_TZ and timezone.is_aware(value):
+        warnings.warn(
+            "The MySQL database adapter received an aware datetime (%s), "
+            "probably from cursor.execute(). Update your code to pass a "
+            "naive datetime in the database connection's time zone (UTC by "
+            "default).", RemovedInDjango20Warning)
+        # This doesn't account for the database connection's timezone,
+        # which isn't known. (That's why this adapter is deprecated.)
         value = value.astimezone(timezone.utc).replace(tzinfo=None)
-    if HAVE_CEXT:
-        return datetime_to_mysql(value)
-    else:
-        return value.strftime("%Y-%m-%d %H:%M:%S.%f")
+    return Thing2Literal(value.strftime("%Y-%m-%d %H:%M:%S.%f"), conv)
 
 
-class DjangoMySQLConverter(MySQLConverter):
-    """Custom converter for Django for MySQLConnection"""
-    def _TIME_to_python(self, value, dsc=None):
-        """Return MySQL TIME data type as datetime.time()
+# MySQLdb returns TIME columns as timedelta -- they are more like timedelta in
+# terms of actual behavior as they are signed and include days -- and Django
+# expects time, so we still need to override that. We also need to add special
+# handling for SafeText and SafeBytes as MySQLdb's type checking is too tight
+# to catch those (see Django ticket #6052).
+django_conversions = conversions.copy()
+django_conversions.update({
+    FIELD_TYPE.TIME: backend_utils.typecast_time,
+    FIELD_TYPE.DECIMAL: backend_utils.typecast_decimal,
+    FIELD_TYPE.NEWDECIMAL: backend_utils.typecast_decimal,
+    datetime.datetime: adapt_datetime_warn_on_aware_datetime,
+})
 
-        Returns datetime.time()
-        """
-        return dateparse.parse_time(value.decode('utf-8'))
-
-    def _DATETIME_to_python(self, value, dsc=None):
-        """Connector/Python always returns naive datetime.datetime
-
-        Connector/Python always returns naive timestamps since MySQL has
-        no time zone support. Since Django needs non-naive, we need to add
-        the UTC time zone.
-
-        Returns datetime.datetime()
-        """
-        if not value:
-            return None
-        dt = MySQLConverter._DATETIME_to_python(self, value)
-        if dt is None:
-            return None
-        if settings.USE_TZ and timezone.is_naive(dt):
-            dt = dt.replace(tzinfo=timezone.utc)
-        return dt
-
-    def _safetext_to_mysql(self, value):
-        if PY2:
-            return self._unicode_to_mysql(value)
-        else:
-            return self._str_to_mysql(value)
-
-    def _safebytes_to_mysql(self, value):
-        return self._bytes_to_mysql(value)
-
-
-class DjangoCMySQLConverter(MySQLConverterBase):
-    """Custom converter for Django for CMySQLConnection"""
-    def _TIME_to_python(self, value, dsc=None):
-        """Return MySQL TIME data type as datetime.time()
-
-        Returns datetime.time()
-        """
-        return dateparse.parse_time(str(value))
-
-    def _DATETIME_to_python(self, value, dsc=None):
-        """Connector/Python always returns naive datetime.datetime
-
-        Connector/Python always returns naive timestamps since MySQL has
-        no time zone support. Since Django needs non-naive, we need to add
-        the UTC time zone.
-
-        Returns datetime.datetime()
-        """
-        if not value:
-            return None
-        if settings.USE_TZ and timezone.is_naive(value):
-            value = value.replace(tzinfo=timezone.utc)
-        return value
+# This should match the numerical portion of the version numbers (we can treat
+# versions like 5.0.24 and 5.0.24a as the same).
+server_version_re = re.compile(r'(\d{1,2})\.(\d{1,2})\.(\d{1,2})')
 
 
 class CursorWrapper(object):
-    """Wrapper around MySQL Connector/Python's cursor class.
+    """
+    A thin wrapper around MySQLdb's normal cursor class so that we can catch
+    particular exception instances and reraise them with the right types.
 
-    The cursor class is defined by the options passed to MySQL
-    Connector/Python. If buffered option is True in those options,
-    MySQLCursorBuffered will be used.
+    Implemented as a wrapper, rather than a subclass, so that we aren't stuck
+    to the particular underlying representation returned by Connection.cursor().
     """
     codes_for_integrityerror = (1048,)
 
     def __init__(self, cursor):
         self.cursor = cursor
 
-    def _execute_wrapper(self, method, query, args):
-        """Wrapper around execute() and executemany()"""
+    def execute(self, query, args=None):
         try:
-            return method(query, args)
-        except (mysql.connector.ProgrammingError) as err:
-            six.reraise(utils.ProgrammingError,
-                        utils.ProgrammingError(err.msg), sys.exc_info()[2])
-        except (mysql.connector.IntegrityError) as err:
-            six.reraise(utils.IntegrityError,
-                        utils.IntegrityError(err.msg), sys.exc_info()[2])
-        except mysql.connector.OperationalError as err:
+            # args is None means no string interpolation
+            return self.cursor.execute(query, args)
+        except Database.OperationalError as e:
             # Map some error codes to IntegrityError, since they seem to be
             # misclassified and Django would prefer the more logical place.
-            if err.args[0] in self.codes_for_integrityerror:
-                six.reraise(utils.IntegrityError,
-                            utils.IntegrityError(err.msg), sys.exc_info()[2])
-            else:
-                six.reraise(utils.DatabaseError,
-                            utils.DatabaseError(err.msg), sys.exc_info()[2])
-        except mysql.connector.DatabaseError as err:
-            six.reraise(utils.DatabaseError,
-                        utils.DatabaseError(err.msg), sys.exc_info()[2])
-
-    def _adapt_execute_args_dict(self, args):
-        if not args:
-            return args
-        new_args = dict(args)
-        for key, value in args.items():
-            if isinstance(value, datetime):
-                new_args[key] = adapt_datetime_with_timezone_support(value)
-
-        return new_args
-
-    def _adapt_execute_args(self, args):
-        if not args:
-            return args
-        new_args = list(args)
-        for i, arg in enumerate(args):
-            if isinstance(arg, datetime):
-                new_args[i] = adapt_datetime_with_timezone_support(arg)
-
-        return tuple(new_args)
-
-    def execute(self, query, args=None):
-        """Executes the given operation
-
-        This wrapper method around the execute()-method of the cursor is
-        mainly needed to re-raise using different exceptions.
-        """
-        if isinstance(args, dict):
-            new_args = self._adapt_execute_args_dict(args)
-        else:
-            new_args = self._adapt_execute_args(args)
-        return self._execute_wrapper(self.cursor.execute, query, new_args)
+            if e.args[0] in self.codes_for_integrityerror:
+                six.reraise(utils.IntegrityError, utils.IntegrityError(*tuple(e.args)), sys.exc_info()[2])
+            raise
 
     def executemany(self, query, args):
-        """Executes the given operation
-
-        This wrapper method around the executemany()-method of the cursor is
-        mainly needed to re-raise using different exceptions.
-        """
-        return self._execute_wrapper(self.cursor.executemany, query, args)
+        try:
+            return self.cursor.executemany(query, args)
+        except Database.OperationalError as e:
+            # Map some error codes to IntegrityError, since they seem to be
+            # misclassified and Django would prefer the more logical place.
+            if e.args[0] in self.codes_for_integrityerror:
+                six.reraise(utils.IntegrityError, utils.IntegrityError(*tuple(e.args)), sys.exc_info()[2])
+            raise
 
     def __getattr__(self, attr):
-        """Return attribute of wrapped cursor"""
-        return getattr(self.cursor, attr)
+        if attr in self.__dict__:
+            return self.__dict__[attr]
+        else:
+            return getattr(self.cursor, attr)
 
     def __iter__(self):
-        """Returns iterator over wrapped cursor"""
         return iter(self.cursor)
 
     def __enter__(self):
         return self
 
-    def __exit__(self, exc_type, exc_value, exc_traceback):
+    def __exit__(self, type, value, traceback):
+        # Close instead of passing through to avoid backend-specific behavior
+        # (#17671).
         self.close()
 
 
@@ -255,10 +140,9 @@ class DatabaseWrapper(BaseDatabaseWrapper):
     # types, as strings. Column-type strings can contain format strings; they'll
     # be interpolated against the values of Field.__dict__ before being output.
     # If a column type is set to None, it won't be included in the output.
-
-    # Moved from DatabaseCreation class in Django v1.8
     _data_types = {
         'AutoField': 'integer AUTO_INCREMENT',
+        'BigAutoField': 'bigint AUTO_INCREMENT',
         'BinaryField': 'longblob',
         'BooleanField': 'bool',
         'CharField': 'varchar(%(max_length)s)',
@@ -288,8 +172,7 @@ class DatabaseWrapper(BaseDatabaseWrapper):
     @cached_property
     def data_types(self):
         if self.features.supports_microsecond_precision:
-            return dict(self._data_types, DateTimeField='datetime(6)',
-                        TimeField='time(6)')
+            return dict(self._data_types, DateTimeField='datetime(6)', TimeField='time(6)')
         else:
             return self._data_types
 
@@ -311,15 +194,14 @@ class DatabaseWrapper(BaseDatabaseWrapper):
     }
 
     # The patterns below are used to generate SQL pattern lookup clauses when
-    # the right-hand side of the lookup isn't a raw string (it might be an
-    # expression or the result of a bilateral transformation).
-    # In those cases, special characters for LIKE operators (e.g. \, *, _)
-    # should be escaped on database side.
+    # the right-hand side of the lookup isn't a raw string (it might be an expression
+    # or the result of a bilateral transformation).
+    # In those cases, special characters for LIKE operators (e.g. \, *, _) should be
+    # escaped on database side.
     #
-    # Note: we use str.format() here for readability as '%' is used as a
-    # wildcard for the LIKE operator.
-    pattern_esc = (r"REPLACE(REPLACE(REPLACE({}, '\\', '\\\\'),"
-                   r" '%%', '\%%'), '_', '\_')")
+    # Note: we use str.format() here for readability as '%' is used as a wildcard for
+    # the LIKE operator.
+    pattern_esc = r"REPLACE(REPLACE(REPLACE({}, '\\', '\\\\'), '%%', '\%%'), '_', '\_')"
     pattern_ops = {
         'contains': "LIKE BINARY CONCAT('%%', {}, '%%')",
         'icontains': "LIKE CONCAT('%%', {}, '%%')",
@@ -329,168 +211,128 @@ class DatabaseWrapper(BaseDatabaseWrapper):
         'iendswith': "LIKE CONCAT('%%', {})",
     }
 
+    isolation_levels = {
+        'read uncommitted',
+        'read committed',
+        'repeatable read',
+        'serializable',
+    }
+
+    Database = Database
     SchemaEditorClass = DatabaseSchemaEditor
-    Database = mysql.connector
-
-    def __init__(self, *args, **kwargs):
-        super(DatabaseWrapper, self).__init__(*args, **kwargs)
-
-        try:
-            self._use_pure = self.settings_dict['OPTIONS']['use_pure']
-        except KeyError:
-            self._use_pure = True
-
-        if not self.use_pure:
-            self.converter = DjangoCMySQLConverter()
-        else:
-            self.converter = DjangoMySQLConverter()
-        self.ops = DatabaseOperations(self)
-        self.features = DatabaseFeatures(self)
-        self.client = DatabaseClient(self)
-        self.creation = DatabaseCreation(self)
-        self.introspection = DatabaseIntrospection(self)
-        self.validation = DatabaseValidation(self)
-
-    def _valid_connection(self):
-        if self.connection:
-            return self.connection.is_connected()
-        return False
+    # Classes instantiated in __init__().
+    client_class = DatabaseClient
+    creation_class = DatabaseCreation
+    features_class = DatabaseFeatures
+    introspection_class = DatabaseIntrospection
+    ops_class = DatabaseOperations
+    validation_class = DatabaseValidation
 
     def get_connection_params(self):
-        # Django 1.6
         kwargs = {
+            'conv': django_conversions,
             'charset': 'utf8',
-            'use_unicode': True,
-            'buffered': False,
-            'consume_results': True,
         }
-
+        if six.PY2:
+            kwargs['use_unicode'] = True
         settings_dict = self.settings_dict
-
         if settings_dict['USER']:
             kwargs['user'] = settings_dict['USER']
         if settings_dict['NAME']:
-            kwargs['database'] = settings_dict['NAME']
+            kwargs['db'] = settings_dict['NAME']
         if settings_dict['PASSWORD']:
-            kwargs['passwd'] = settings_dict['PASSWORD']
+            kwargs['passwd'] = force_str(settings_dict['PASSWORD'])
         if settings_dict['HOST'].startswith('/'):
             kwargs['unix_socket'] = settings_dict['HOST']
         elif settings_dict['HOST']:
             kwargs['host'] = settings_dict['HOST']
         if settings_dict['PORT']:
             kwargs['port'] = int(settings_dict['PORT'])
-
-        # Raise exceptions for database warnings if DEBUG is on
-        kwargs['raise_on_warnings'] = settings.DEBUG
-
-        kwargs['client_flags'] = [
-            # Need potentially affected rows on UPDATE
-            mysql.connector.constants.ClientFlag.FOUND_ROWS,
-        ]
-        try:
-            kwargs.update(settings_dict['OPTIONS'])
-        except KeyError:
-            # OPTIONS missing is OK
-            pass
-
+        # We need the number of potentially affected rows after an
+        # "UPDATE", not the number of changed rows.
+        kwargs['client_flag'] = CLIENT.FOUND_ROWS
+        # Validate the transaction isolation level, if specified.
+        options = settings_dict['OPTIONS'].copy()
+        isolation_level = options.pop('isolation_level', None)
+        if isolation_level:
+            isolation_level = isolation_level.lower()
+            if isolation_level not in self.isolation_levels:
+                raise ImproperlyConfigured(
+                    "Invalid transaction isolation level '%s' specified.\n"
+                    "Use one of %s, or None." % (
+                        isolation_level,
+                        ', '.join("'%s'" % s for s in sorted(self.isolation_levels))
+                    ))
+            # The variable assignment form of setting transaction isolation
+            # levels will be used, e.g. "set tx_isolation='repeatable-read'".
+            isolation_level = isolation_level.replace(' ', '-')
+        self.isolation_level = isolation_level
+        kwargs.update(options)
         return kwargs
 
     def get_new_connection(self, conn_params):
-        # Django 1.6
-        if not self.use_pure:
-            conn_params['converter_class'] = DjangoCMySQLConverter
-        else:
-            conn_params['converter_class'] = DjangoMySQLConverter
-        cnx = mysql.connector.connect(**conn_params)
-
-        return cnx
+        conn = Database.connect(**conn_params)
+        conn.encoders[SafeText] = conn.encoders[six.text_type]
+        conn.encoders[SafeBytes] = conn.encoders[bytes]
+        return conn
 
     def init_connection_state(self):
-        # Django 1.6
-        if self.mysql_version < (5, 5, 3):
-            # See sysvar_sql_auto_is_null in MySQL Reference manual
-            self.connection.cmd_query("SET SQL_AUTO_IS_NULL = 0")
+        assignments = []
+        if self.features.is_sql_auto_is_null_enabled:
+            # SQL_AUTO_IS_NULL controls whether an AUTO_INCREMENT column on
+            # a recently inserted row will return when the field is tested
+            # for NULL. Disabling this brings this aspect of MySQL in line
+            # with SQL standards.
+            assignments.append('SQL_AUTO_IS_NULL = 0')
 
-        if 'AUTOCOMMIT' in self.settings_dict:
-            try:
-                # Django 1.6
-                self.set_autocommit(self.settings_dict['AUTOCOMMIT'])
-            except AttributeError:
-                self._set_autocommit(self.settings_dict['AUTOCOMMIT'])
+        if self.isolation_level:
+            assignments.append("TX_ISOLATION = '%s'" % self.isolation_level)
 
-    def create_cursor(self):
-        # Django 1.6
+        if assignments:
+            with self.cursor() as cursor:
+                cursor.execute('SET ' + ', '.join(assignments))
+
+    def create_cursor(self, name=None):
         cursor = self.connection.cursor()
         return CursorWrapper(cursor)
 
-    def _connect(self):
-        """Setup the connection with MySQL"""
-        self.connection = self.get_new_connection(self.get_connection_params())
-        connection_created.send(sender=self.__class__, connection=self)
-        self.init_connection_state()
-
-    def _cursor(self):
-        """Return a CursorWrapper object
-
-        Returns a CursorWrapper
-        """
+    def _rollback(self):
         try:
-            # Django 1.6
-            return super(DatabaseWrapper, self)._cursor()
-        except AttributeError:
-            if not self.connection:
-                self._connect()
-            return self.create_cursor()
+            BaseDatabaseWrapper._rollback(self)
+        except Database.NotSupportedError:
+            pass
 
-    def get_server_version(self):
-        """Returns the MySQL server version of current connection
-
-        Returns a tuple
-        """
-        try:
-            # Django 1.6
-            self.ensure_connection()
-        except AttributeError:
-            if not self.connection:
-                self._connect()
-
-        return self.connection.get_server_version()
+    def _set_autocommit(self, autocommit):
+        with self.wrap_database_errors:
+            self.connection.autocommit(autocommit)
 
     def disable_constraint_checking(self):
-        """Disables foreign key checks
-
-        Disables foreign key checks, primarily for use in adding rows with
-        forward references. Always returns True,
-        to indicate constraint checks need to be re-enabled.
-
-        Returns True
         """
-        self.cursor().execute('SET @@session.foreign_key_checks = 0')
+        Disables foreign key checks, primarily for use in adding rows with forward references. Always returns True,
+        to indicate constraint checks need to be re-enabled.
+        """
+        self.cursor().execute('SET foreign_key_checks=0')
         return True
 
     def enable_constraint_checking(self):
-        """Re-enable foreign key checks
-
+        """
         Re-enable foreign key checks after they have been disabled.
         """
         # Override needs_rollback in case constraint_checks_disabled is
         # nested inside transaction.atomic.
-        if django.VERSION >= (1, 6):
-            self.needs_rollback, needs_rollback = False, self.needs_rollback
+        self.needs_rollback, needs_rollback = False, self.needs_rollback
         try:
-            self.cursor().execute('SET @@session.foreign_key_checks = 1')
+            self.cursor().execute('SET foreign_key_checks=1')
         finally:
-            if django.VERSION >= (1, 6):
-                self.needs_rollback = needs_rollback
+            self.needs_rollback = needs_rollback
 
     def check_constraints(self, table_names=None):
-        """Check rows in tables for invalid foreign key references
-
+        """
         Checks each table name in `table_names` for rows with invalid foreign
         key references. This method is intended to be used in conjunction with
         `disable_constraint_checking()` and `enable_constraint_checking()`, to
-        determine if rows with invalid references were entered while
-        constraint checks were off.
+        determine if rows with invalid references were entered while constraint
+        checks were off.
 
         Raises an IntegrityError on the first invalid foreign key reference
         encountered (if any) and provides detailed information about the
@@ -499,69 +341,51 @@ class DatabaseWrapper(BaseDatabaseWrapper):
         Backends can override this method if they can more directly apply
         constraint checking (e.g. via "SET CONSTRAINTS ALL IMMEDIATE")
         """
-        ref_query = """
-            SELECT REFERRING.`{0}`, REFERRING.`{1}` FROM `{2}` as REFERRING
-            LEFT JOIN `{3}` as REFERRED
-            ON (REFERRING.`{4}` = REFERRED.`{5}`)
-            WHERE REFERRING.`{6}` IS NOT NULL AND REFERRED.`{7}` IS NULL"""
         cursor = self.cursor()
         if table_names is None:
             table_names = self.introspection.table_names(cursor)
         for table_name in table_names:
-            primary_key_column_name = \
-                self.introspection.get_primary_key_column(cursor, table_name)
+            primary_key_column_name = self.introspection.get_primary_key_column(cursor, table_name)
             if not primary_key_column_name:
                 continue
-            key_columns = self.introspection.get_key_columns(cursor,
-                                                             table_name)
-            for column_name, referenced_table_name, referenced_column_name \
-                    in key_columns:
-                cursor.execute(ref_query.format(primary_key_column_name,
-                                                column_name, table_name,
-                                                referenced_table_name,
-                                                column_name,
-                                                referenced_column_name,
-                                                column_name,
-                                                referenced_column_name))
+            key_columns = self.introspection.get_key_columns(cursor, table_name)
+            for column_name, referenced_table_name, referenced_column_name in key_columns:
+                cursor.execute(
+                    """
+                    SELECT REFERRING.`%s`, REFERRING.`%s` FROM `%s` as REFERRING
+                    LEFT JOIN `%s` as REFERRED
+                    ON (REFERRING.`%s` = REFERRED.`%s`)
+                    WHERE REFERRING.`%s` IS NOT NULL AND REFERRED.`%s` IS NULL
+                    """ % (
+                        primary_key_column_name, column_name, table_name,
+                        referenced_table_name, column_name, referenced_column_name,
+                        column_name, referenced_column_name,
+                    )
+                )
                 for bad_row in cursor.fetchall():
-                    msg = ("The row in table '{0}' with primary key '{1}' has "
-                           "an invalid foreign key: {2}.{3} contains a value "
-                           "'{4}' that does not have a corresponding value in "
-                           "{5}.{6}.".format(table_name, bad_row[0],
-                                             table_name, column_name,
-                                             bad_row[1], referenced_table_name,
-                                             referenced_column_name))
-                    raise utils.IntegrityError(msg)
-
-    def _rollback(self):
-        try:
-            BaseDatabaseWrapper._rollback(self)
-        except NotSupportedError:
-            pass
-
-    def _set_autocommit(self, autocommit):
-        # Django 1.6
-        with self.wrap_database_errors:
-            self.connection.autocommit = autocommit
-
-    def schema_editor(self, *args, **kwargs):
-        """Returns a new instance of this backend's SchemaEditor"""
-        # Django 1.7
-        return DatabaseSchemaEditor(self, *args, **kwargs)
+                    raise utils.IntegrityError(
+                        "The row in table '%s' with primary key '%s' has an invalid "
+                        "foreign key: %s.%s contains a value '%s' that does not have a corresponding value in %s.%s."
+                        % (
+                            table_name, bad_row[0], table_name, column_name,
+                            bad_row[1], referenced_table_name, referenced_column_name,
+                        )
+                    )
 
     def is_usable(self):
-        # Django 1.6
-        return self.connection.is_connected()
+        try:
+            self.connection.ping()
+        except Database.Error:
+            return False
+        else:
+            return True
 
     @cached_property
     def mysql_version(self):
-        config = self.get_connection_params()
-        temp_conn = mysql.connector.connect(**config)
-        server_version = temp_conn.get_server_version()
-        temp_conn.close()
-
-        return server_version
-
-    @property
-    def use_pure(self):
-        return not HAVE_CEXT or self._use_pure
+        with self.temporary_connection() as cursor:
+            cursor.execute('SELECT VERSION()')
+            server_info = cursor.fetchone()[0]
+        match = server_version_re.match(server_info)
+        if not match:
+            raise Exception('Unable to determine MySQL version from version string %r' % server_info)
+        return tuple(int(x) for x in match.groups())

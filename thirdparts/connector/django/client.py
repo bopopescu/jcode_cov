@@ -1,12 +1,6 @@
-# MySQL Connector/Python - MySQL driver written in Python.
-
-import django
 import subprocess
 
-if django.VERSION >= (1, 8):
-    from django.db.backends.base.client import BaseDatabaseClient
-else:
-    from django.db.backends import BaseDatabaseClient
+from django.db.backends.base.client import BaseDatabaseClient
 
 
 class DatabaseClient(BaseDatabaseClient):
@@ -15,43 +9,34 @@ class DatabaseClient(BaseDatabaseClient):
     @classmethod
     def settings_to_cmd_args(cls, settings_dict):
         args = [cls.executable_name]
-
-        db = settings_dict['OPTIONS'].get('database', settings_dict['NAME'])
-        user = settings_dict['OPTIONS'].get('user',
-                                            settings_dict['USER'])
-        passwd = settings_dict['OPTIONS'].get('password',
-                                              settings_dict['PASSWORD'])
+        db = settings_dict['OPTIONS'].get('db', settings_dict['NAME'])
+        user = settings_dict['OPTIONS'].get('user', settings_dict['USER'])
+        passwd = settings_dict['OPTIONS'].get('passwd', settings_dict['PASSWORD'])
         host = settings_dict['OPTIONS'].get('host', settings_dict['HOST'])
         port = settings_dict['OPTIONS'].get('port', settings_dict['PORT'])
+        cert = settings_dict['OPTIONS'].get('ssl', {}).get('ca')
         defaults_file = settings_dict['OPTIONS'].get('read_default_file')
+        # Seems to be no good way to set sql_mode with CLI.
 
-        # --defaults-file should always be the first option
         if defaults_file:
-            args.append("--defaults-file={0}".format(defaults_file))
-
-        # We force SQL_MODE to TRADITIONAL
-        args.append("--init-command=SET @@session.SQL_MODE=TRADITIONAL")
-
+            args += ["--defaults-file=%s" % defaults_file]
         if user:
-            args.append("--user={0}".format(user))
+            args += ["--user=%s" % user]
         if passwd:
-            args.append("--password={0}".format(passwd))
-
+            args += ["--password=%s" % passwd]
         if host:
             if '/' in host:
-                args.append("--socket={0}".format(host))
+                args += ["--socket=%s" % host]
             else:
-                args.append("--host={0}".format(host))
-
+                args += ["--host=%s" % host]
         if port:
-            args.append("--port={0}".format(port))
-
+            args += ["--port=%s" % port]
+        if cert:
+            args += ["--ssl-ca=%s" % cert]
         if db:
-            args.append("--database={0}".format(db))
-
+            args += [db]
         return args
 
     def runshell(self):
-        args = DatabaseClient.settings_to_cmd_args(
-            self.connection.settings_dict)
-        subprocess.call(args)
+        args = DatabaseClient.settings_to_cmd_args(self.connection.settings_dict)
+        subprocess.check_call(args)
