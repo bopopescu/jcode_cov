@@ -44,9 +44,9 @@ class CoverageMaster(object):
 
         clog.info("args[0]=ip, arg[1]=port, arg[2]=action")
 
-        run_jar_cmd = "java -jar /home/sankuai/architect-coverage-remote-dump.jar %s %s clean" % (
+        run_jar_cmd = "java -jar /home/sankuai/architect-coverage-remote-dump.jar {} {} clean".format(
             self.p_record.host, port)
-        remote_cmd('sankuai@%s' % self.p_record.host, "", run_jar_cmd)
+        remote_cmd("sankuai@{0}".format(self.p_record.host), "", run_jar_cmd)
 
     def dump(self, remote_class_path, port, jobname, old_commit, new_commit, old_branch, job_url):
         """
@@ -66,16 +66,17 @@ class CoverageMaster(object):
         local_time = time.strftime("%Y-%m-%d-%H-%M-%S", time.localtime())
 
         exec_name = os.path.join(self.local_output_path, self.p_record.plus_name + local_time + "_jacoco.exec")
-        run_jar_cmd = "java -jar %s %s %s dump %s" % (
+        run_jar_cmd = "java -jar {} {} {} dump {}".format(
             self.remote_dump_jar_path, self.p_record.host, port, exec_name)
         run_cmd(run_jar_cmd)
 
         self.coverage_info['exec'] = exec_name
 
-        local_class_path = os.path.join(self.local_output_path, "webroot_%s%s" % (self.p_record.plus_name, local_time))
+        local_class_path = os.path.join(self.local_output_path,
+                                        "webroot_{}{}".format(self.p_record.plus_name, local_time))
         self.get_remote_class(remote_class_path, local_class_path)
 
-        local_src_path = os.path.join(self.local_output_path, "src_%s%s" % (self.p_record.plus_name, local_time))
+        local_src_path = os.path.join(self.local_output_path, "src_{}{}".format(self.p_record.plus_name, local_time))
         # comment it out temporarily for qcs auto cov
         # jobname = os.path.abspath(os.path.join(os.path.dirname(__file__), os.pardir, os.pardir)).split('/')[-1]
 
@@ -99,8 +100,8 @@ class CoverageMaster(object):
             if ".war" in item:
                 index = item.find(".war") + len(".war")
                 tmp = item[:index]
-                cmd = "unzip %s -d %s" % (tmp, tmp.replace(".war", ""))
-                remote_cmd('sankuai@%s' % self.p_record.host, "", cmd)
+                cmd = "unzip {} -d {}".format(tmp, tmp.replace(".war", ""))
+                remote_cmd("sankuai@{0}".format(self.p_record.host), "", cmd)
                 item = item.replace(".war", "")
 
             get_from_remote(self.p_record.host, 'sankuai', '', item, local_class_path)
@@ -113,11 +114,11 @@ class CoverageMaster(object):
                 tmp_classes += "/classes"
                 mkdir(tmp_classes)
 
-                run_cmd("mv %s %s" % (os.path.join(local_class_path, item), tmp_classes))
+                run_cmd("mv {} {}".format(os.path.join(local_class_path, item), tmp_classes))
 
                 jar_path = os.path.join(tmp_classes, item)
-                run_cmd("unzip -d %s %s" % (tmp_classes, jar_path))
-                run_cmd("rm -rf %s" % jar_path)
+                run_cmd("unzip -d {} {}".format(tmp_classes, jar_path))
+                run_cmd("rm -rf {}".format(jar_path))
 
         self.coverage_info['class'] = local_class_path
 
@@ -137,20 +138,20 @@ class CoverageMaster(object):
         mkdir(local_src_path)
         src_space = local_src_path + os.sep + self.p_record.git.split('/')[-1].rsplit('.', 1)[0]
 
-        cmd = 'cd %s && git clone %s && cd %s && ' % (local_src_path, self.p_record.git, src_space)
+        cmd = "cd {} && git clone {} && cd {} && ".format(local_src_path, self.p_record.git, src_space)
 
         commit_hash_len = 10
         if self.p_record.commit is not None and len(self.p_record.commit) > commit_hash_len:
-            cmd += "git checkout %s" % self.p_record.commit
+            cmd += "git checkout {}".format(self.p_record.commit)
         else:
-            cmd += "git checkout %s" % self.p_record.branch
+            cmd += "git checkout {}".format(self.p_record.branch)
 
         self.coverage_info['src'] = local_src_path
 
         print(cmd)
         run_cmd(cmd)
         if len(os.listdir(src_space)) < 1:
-            clog.error("获取git失败")
+            clog.error("Git fetch failed.")
             return
 
         self.get_diff_cov(old_commit, new_commit, src_space, old_branch, jobname, job_url)
@@ -167,40 +168,40 @@ class CoverageMaster(object):
         """
 
         if old_branch is not None:
-            clog.info("填写--old-branch 获取%s&%s分支diff" % (old_branch, self.p_record.branch))
+            clog.info("Fill in --old-branch, get {} & {} branch diff".format(old_branch, self.p_record.branch))
             old_commit = old_branch
             new_commit = self.p_record.branch
-            cmd = "cd %s && git checkout %s && git checkout %s " % (src_space, old_commit, new_commit)
+            cmd = "cd {} && git checkout {} && git checkout {}".format(src_space, old_commit, new_commit)
             run_cmd(cmd)
         else:
             if old_commit is None:
-                clog.info("未填写--old-commit git源代码老版本参数，无法获取git增量")
+                clog.info("Did not fill in --old-commit git old version parameters "
+                          "for source code，Git increments could not be obtained.")
                 return
 
             if new_commit is None:
-                cmd = "cd %s && git log > git.log" % src_space
+                cmd = "cd {} && git log > git.log".format(src_space)
                 run_cmd(cmd)
 
                 new_commit = self.get_new_commit(src_space + "/git.log")
-                run_cmd("rm -rf %s/git.log" % src_space)
+                run_cmd("rm -rf {}/git.log".format(src_space))
                 if new_commit is None:
-                    clog.error("未填写--new-commit git源代码新版本参数，并且git log未获取到最新commit")
+                    clog.error("Did not fill in --new-commit git new version parameter "
+                               "and git log does not get the latest commit.")
                     return
 
-        cmd = "cd %s && git diff %s %s >diff.txt" % (src_space, old_commit, new_commit)
+        cmd = "cd {} && git diff {} {} >diff.txt".format(src_space, old_commit, new_commit)
         run_cmd(cmd)
 
         excludes = self.get_jenkins_exclusion_pattern(jobname, job_url)
 
-        run_jar_cmd = "java -Dfile.encoding=utf-8 -jar %s %s %s %s" % (
+        run_jar_cmd = "java -Dfile.encoding=utf-8 -jar {} {} {} {}".format(
             self.line_coverage_jar_path, src_space + "/diff.txt", self.p_record.plus_name, excludes)
         run_cmd(run_jar_cmd)
 
-        # run_cmd("rm -rf %s" % (src_space + "/diff.txt"))
-
         if os.path.isfile(src_space + "/diffcov.txt"):
             if not os.path.exists(self.local_output_path + "/diff2html"):
-                cmd = "cp -r %s %s" % (os.path.join(root_path, "thirdparts/diff2html"), self.local_output_path)
+                cmd = "cp -r {} {}".format(os.path.join(root_path, "thirdparts/diff2html"), self.local_output_path)
                 run_cmd(cmd)
             self.store_to_report_dir(self.local_output_path, src_space)
             source_diffcov_html = os.path.join(root_path, "thirdparts/diffcov.html")
@@ -213,13 +214,13 @@ class CoverageMaster(object):
         :param output_path:
         :param src_space:
         """
-        cmd = "cp -r %s %s" % (os.path.join(output_path, "webroot_*"), output_path + "/diff2html")
+        cmd = "cp -r {} {}".format(os.path.join(output_path, "webroot_*"), output_path + "/diff2html")
         run_cmd(cmd)
-        cmd = "cp %s %s" % (os.path.join(output_path, "*.exec"), output_path + "/diff2html")
+        cmd = "cp {} {}".format(os.path.join(output_path, "*.exec"), output_path + "/diff2html")
         run_cmd(cmd)
-        cmd = "cp %s %s" % (os.path.join(src_space, "diff.txt"), output_path + "/diff2html")
+        cmd = "cp {} {}".format(os.path.join(src_space, "diff.txt"), output_path + "/diff2html")
         run_cmd(cmd)
-        cmd = "cp %s %s" % (os.path.join(src_space, "diffcov.txt"), output_path + "/diff2html")
+        cmd = "cp {} {}".format(os.path.join(src_space, "diffcov.txt"), output_path + "/diff2html")
         run_cmd(cmd)
 
     def get_new_commit(self, log_path):
@@ -396,13 +397,13 @@ class CoverageMaster(object):
             job_path = os.path.join(file_server_root, jobname)
             date_path = os.path.join(job_path, date_path)
 
-            cmd = 'sudo mkdir %s &&sudo chmod 777 %s' % (job_path, job_path)
-            remote_cmd('root@%s' % self.file_server_hostname, self.file_server_passwd, cmd)
+            cmd = "sudo mkdir {} && sudo chmod 777 {}".format(job_path, job_path)
+            remote_cmd("root@{0}".format(self.file_server_hostname), self.file_server_passwd, cmd)
 
-            cmd = 'sudo mkdir %s && sudo chmod 777 %s' % (date_path, date_path)
-            remote_cmd('root@%s' % self.file_server_hostname, self.file_server_passwd, cmd)
+            cmd = "sudo mkdir {} && sudo chmod 777 {}".format(date_path, date_path)
+            remote_cmd("root@{0}".format(self.file_server_hostname), self.file_server_passwd, cmd)
 
-            scp_to_remote(self.file_server_hostname, 'root', self.file_server_passwd, date_path, self.local_output_path)
+            scp_to_remote(self.file_server_hostname, "root", self.file_server_passwd, date_path, self.local_output_path)
         else:
             clog.error("lack jacoco.exec and classes")
 
@@ -437,7 +438,7 @@ def send_request(url):
             return json.loads(response.text)
         except:
             return response.text
-    clog.info("jenkins job %s error, or requests.exceptions.ConnectionError " % url)
+    clog.info("jenkins job {} error, or requests.exceptions.ConnectionError ".format(url))
     return None
 
 

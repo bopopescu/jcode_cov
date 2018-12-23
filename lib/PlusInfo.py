@@ -39,7 +39,7 @@ def get_login_data():
     sleep(1)
     cookie = ""
     for item in response.cookies.items():
-        cookie += "%s=%s;" % (item[0], item[1])
+        cookie += "{}={};".format(item[0], item[1])
     cookie = cookie[:-1]
 
     soup = BeautifulSoup(response.text, "html.parser")
@@ -75,7 +75,7 @@ def get_login_data():
     sleep(1)
     cookie = ""
     for item in response.cookies.items():
-        cookie += "%s=%s;" % (item[0], item[1])
+        cookie += "{}={};".format(item[0], item[1])
     cookie = cookie[:-1]
     print(cookie)
     return {"Cookie": cookie}
@@ -102,7 +102,7 @@ class PlusRecord(object):
     def init(self):
         plus_detail = self.get_item_info_by_name()
         if plus_detail is None or "Id" not in plus_detail:
-            print("获取Plus发布项%s配置失败" % self.plus_name)
+            print("获取Plus发布项{}配置失败".format(self.plus_name))
             return None
 
         git_url = plus_detail['Repository']
@@ -121,7 +121,7 @@ class PlusRecord(object):
         Get a deployment detail
         :return:
         """
-        req_url = "%s%s?release_name=%s" % (self.base_url, '/release_detail', self.plus_name)
+        req_url = "{}{}?release_name={}".format(self.base_url, '/release_detail', self.plus_name)
         print(req_url)
         response = requests.get(req_url, verify=False)
         sleep(1)
@@ -136,7 +136,7 @@ class PlusRecord(object):
         :param item_id:
         :return:
         """
-        url = "%s%s" % (self.base_url, "/release/%s/joblist?offset=0&limit=1000" % item_id)
+        url = "{}{}".format(self.base_url, "/release/{}/joblist?offset=0&limit=1000".format(item_id))
         sleep(1)
         print(url)
         try:
@@ -148,7 +148,7 @@ class PlusRecord(object):
             return response.json()
 
         except Exception as e:
-            print("error %s" % e)
+            print("error {}".format(e))
             return None
 
     def get_template_deploy_record_by_id(self, item_id):
@@ -174,12 +174,10 @@ class PlusRecord(object):
         :return:
         """
         last_daemon_job_id = records[0]['DaemonJobId']
-        last_detail_url = "%s/ui/release/%s/job/%s/detail" % (self.base_url, item_id, last_daemon_job_id)
-        # last_detail_url = "%s/release/%s/job/%s/detail" % (self.base_url, item_id, last_daemon_job_id)
+        last_detail_url = "{}/ui/release/{}/job/{}/detail".format(self.base_url, item_id, last_daemon_job_id)
 
         print(last_detail_url)
         try:
-            # response = requests.get(last_detail_url)
             response = requests.get(last_detail_url,
                                     headers={'Cookie': 'deploytoken=91865de3-16f1-456c-9b88-311a1dfbb8e6'},
                                     verify=False)
@@ -189,11 +187,11 @@ class PlusRecord(object):
                 return None
             return response.json()
         except Exception as e:
-            print("error %s" % e)
+            print("error {}".format(e))
             return None
 
     def get_all(self):
-        url = "%s/release/list/all" % self.base_url
+        url = "{}/release/list/all".format(self.base_url)
         response = requests.get(url)
         print(response.text)
 
