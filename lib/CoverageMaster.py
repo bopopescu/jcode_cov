@@ -36,7 +36,7 @@ class CoverageMaster(object):
     def clean(self, port):
         """
         push to remote server and execute remote command,
-        jenkins salve cannot remotely clear the server coverage data
+        jenkins salve cannot clear the server coverage data remotely.
         :param port:
         """
         scp_to_remote(self.p_record.host, 'sankuai', "", "/home/sankuai/",
