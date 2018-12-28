@@ -48,7 +48,7 @@ class CoverageMaster(object):
             self.p_record.host, port)
         remote_cmd("sankuai@{0}".format(self.p_record.host), "", run_jar_cmd)
 
-    def dump(self, remote_class_path, port, jobname, old_commit, new_commit, old_branch, job_url, git_url=None):
+    def dump(self, remote_class_path, port, jobname, old_commit, new_commit, old_branch, job_url):
         """
         dump coverage data
         :param remote_class_path:
@@ -58,7 +58,6 @@ class CoverageMaster(object):
         :param new_commit:
         :param old_branch:
         :param job_url:
-        :param git_url:
         """
         clog.info("args[0]=ip, arg[1]=port, arg[2]=action, arg[3]=exec path")
 
@@ -81,7 +80,7 @@ class CoverageMaster(object):
         # comment it out temporarily for qcs auto cov
         # jobname = os.path.abspath(os.path.join(os.path.dirname(__file__), os.pardir, os.pardir)).split('/')[-1]
 
-        self.get_git_code(local_src_path, old_commit, new_commit, old_branch, jobname, job_url, git_url)
+        self.get_git_code(local_src_path, old_commit, new_commit, old_branch, jobname, job_url)
 
         # comment it out temporarily for qcs auto cov
         # self.scp_output_to_remote(local_time, jobname)
@@ -123,17 +122,15 @@ class CoverageMaster(object):
 
         self.coverage_info['class'] = local_class_path
 
-    def get_git_code(self, local_src_path, old_commit, new_commit, old_branch, jobname, job_url, git_url=None):
+    def get_git_code(self, local_src_path, old_commit, new_commit, old_branch, jobname, job_url):
         """
         fetch service source code
-        :return:
         :param local_src_path:
         :param old_commit:
         :param new_commit:
         :param old_branch:
         :param jobname:
         :param job_url:
-        :param git_url:
         :return:
         """
 
@@ -143,7 +140,7 @@ class CoverageMaster(object):
 
         cmd = "cd {} && git clone {} && cd {} && ".format(local_src_path, self.p_record.git, src_space)
 
-        if git_url is None:
+        if self.p_record.git_url is None:
             commit_hash_len = 10
             if self.p_record.commit is not None and len(self.p_record.commit) > commit_hash_len:
                 cmd += "git checkout {}".format(self.p_record.commit)
@@ -518,7 +515,7 @@ def main():
             return
 
         coverage_master.dump(classes, port, jobname, args.old_commit, args.new_commit, args.old_branch,
-                             args.job_url, git_url)
+                             args.job_url)
 
 
 def test_generate():
