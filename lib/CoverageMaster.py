@@ -147,8 +147,8 @@ class CoverageMaster(object):
             commit_hash_len = 10
             if self.p_record.commit is not None and len(self.p_record.commit) > commit_hash_len:
                 cmd += "git checkout {}".format(self.p_record.commit)
-            else:
-                cmd += "git checkout {}".format(self.p_record.branch)
+        else:
+            cmd += "git checkout {}".format(self.p_record.branch)
 
         self.coverage_info['src'] = local_src_path
 
