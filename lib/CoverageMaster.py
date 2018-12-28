@@ -24,8 +24,8 @@ clog = CovLog()
 
 
 class CoverageMaster(object):
-    def __init__(self, plus_name, template_name, host_ip, branch):
-        self.p_record = PlusRecord(plus_name, template_name, host_ip, branch)
+    def __init__(self, plus_name, template_name, host_ip, branch, git_url=None):
+        self.p_record = PlusRecord(plus_name, template_name, host_ip, branch, git_url)
         self.file_server_hostname = "10.4.236.69"
         self.file_server_passwd = "eptools321"
         self.local_output_path = os.path.join(root_path, 'output')
@@ -190,7 +190,7 @@ class CoverageMaster(object):
                                "and git log does not get the latest commit.")
                     return
 
-        cmd = "cd {} && git diff {} {} >diff.txt".format(src_space, old_commit, new_commit)
+        cmd = "cd {} && git diff {} {} > diff.txt".format(src_space, old_commit, new_commit)
         run_cmd(cmd)
 
         excludes = self.get_jenkins_exclusion_pattern(jobname, job_url)
@@ -403,7 +403,8 @@ class CoverageMaster(object):
             cmd = "sudo mkdir {} && sudo chmod 777 {}".format(date_path, date_path)
             remote_cmd("root@{0}".format(self.file_server_hostname), self.file_server_passwd, cmd)
 
-            scp_to_remote(self.file_server_hostname, "root", self.file_server_passwd, date_path, self.local_output_path)
+            scp_to_remote(self.file_server_hostname, "root", self.file_server_passwd,
+                          date_path, self.local_output_path)
         else:
             clog.error("lack jacoco.exec and classes")
 
@@ -426,7 +427,7 @@ def send_request(url):
         try:
             response = requests.get(url, headers={"Authorization": authorization})
         except Exception as e:
-            print(e.message)
+            print(e)
             clog.error("requests.exceptions.ConnectionError try again")
             try_count += 1
             time.sleep(2)
@@ -453,6 +454,8 @@ def main():
     parser.add_argument("-i", "--host_ip", default=None, type=str, help="被测服务ip")
     parser.add_argument("-b", "--branch", default=None, type=str, help="代码branch")
     parser.add_argument("-u", "--job_url", default=None, type=str, help="统计覆盖率job的地址")
+    # 注意: 当plusname设置成appkey的name时候,git_url才需要指定, 因为如果不指定无法获取源码
+    parser.add_argument("-g", "--git_url", default=None, type=str, help="git仓库地址")
     parser.add_argument("--old-commit", "--old_commit", default=None, type=str, help="git源代码老版本")
     parser.add_argument("--new-commit", "--new_commit", default=None, type=str, help="git源代码新版本")
     parser.add_argument("--old-branch", "--old_branch", default=None, type=str, help="git源代码老分支")
@@ -465,6 +468,8 @@ def main():
     port = args.port
     host_ip = args.host_ip
     branch = args.branch
+    git_url = args.git_url
+
     clog.info("命令行参数:" + str(args))
     if plus_name is None:
         clog.error("未填写-n plusname发布项参数")
@@ -486,11 +491,14 @@ def main():
         clog.info("未填写代码branch，默认为master")
         branch = "master"
 
-    coverage_master = CoverageMaster(plus_name, template_name, host_ip, branch)
+    if git_url is not None:
+        coverage_master = CoverageMaster(plus_name, template_name, host_ip, branch, git_url)
+    else:
+        coverage_master = CoverageMaster(plus_name, template_name, host_ip, branch)
 
-    if not coverage_master.p_record.flag:
-        clog.error("获取plus配置失败")
-        return
+        if not coverage_master.p_record.flag:
+            clog.error("获取plus配置失败")
+            return
 
     if action == 'clean':
         clog.info("clean操作：开始清理覆盖率数据")

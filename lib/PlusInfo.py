@@ -82,7 +82,7 @@ def get_login_data():
 
 
 class PlusRecord(object):
-    def __init__(self, plus_name, template_name, ip, branch):
+    def __init__(self, plus_name, template_name, ip, branch, git_url=None):
         self.base_url = 'http://plus.sankuai.com'
         self.plus_name = plus_name
         self.template_name = template_name
@@ -92,12 +92,15 @@ class PlusRecord(object):
         self.host = ip
 
         self.flag = False
-        init_info = self.init()
-
-        if init_info is not None:
-            self.flag = True
-            self.git = init_info['Repository']
-            self.commit = init_info['Commit']
+        self.git_url = git_url
+        if self.git_url:
+            self.git = self.git_url
+        else:
+            init_info = self.init()
+            if init_info is not None:
+                self.flag = True
+                self.git = init_info['Repository']
+                self.commit = init_info['Commit']
 
     def init(self):
         plus_detail = self.get_item_info_by_name()
@@ -207,4 +210,5 @@ if __name__ == '__main__':
     plus_n = 'meituan.meishi.crm.ms'
 
     p_record = PlusRecord(plus_n, template_n, "10.5.245.163", "master")
-    p_record.output_init_info()
+    if p_record.git_url is None:
+        p_record.output_init_info()
