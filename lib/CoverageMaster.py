@@ -141,7 +141,6 @@ class CoverageMaster(object):
         cmd = "cd {} && git clone {} && cd {} && ".format(local_src_path, self.p_record.git, src_space)
 
         commit_hash_len = 10
-        clog.info("commit info: {}".format(self.p_record.commit))
         if self.p_record.git_url is None and self.p_record.commit is not None \
                 and len(self.p_record.commit) > commit_hash_len:
             cmd += "git checkout {}".format(self.p_record.commit)
