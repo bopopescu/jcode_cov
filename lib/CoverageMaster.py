@@ -87,46 +87,9 @@ class CoverageMaster(object):
         # comment it out temporarily for qcs auto cov
         # self.scp_output_to_remote(local_time, jobname)
 
-    def get_remote_class_bak(self, remote_class_path, local_class_path):
-        """
-        fetch remote service class
-        :param remote_class_path:
-        :param local_class_path:
-        """
-        clog.info("Extract tested service classes.")
-        mkdir_p(local_class_path)
-
-        remote_class_path_list = remote_class_path.split(",")
-
-        for item in remote_class_path_list:
-            if ".war" in item:
-                index = item.find(".war") + len(".war")
-                tmp = item[:index]
-                cmd = "unzip {} -o -d {}".format(tmp, tmp.replace(".war", ""))
-                remote_cmd("{}@{}".format(self.service_server_username, self.p_record.host), "", cmd)
-                item = item.replace(".war", "")
-
-            get_from_remote(self.p_record.host, self.service_server_username, "", item, local_class_path)
-
-        path_list = os.listdir(local_class_path)
-        for item in path_list:
-            if item.endswith(".jar"):
-                tmp_classes = os.path.join(local_class_path, item.replace(".jar", ""))
-                mkdir_p(tmp_classes)
-                tmp_classes += "/classes"
-                mkdir_p(tmp_classes)
-
-                run_cmd("mv {} {}".format(os.path.join(local_class_path, item), tmp_classes))
-
-                jar_path = os.path.join(tmp_classes, item)
-                run_cmd("unzip -o -d {} {}".format(tmp_classes, jar_path))
-                run_cmd("rm -rf {}".format(jar_path))
-
-        self.coverage_info['class'] = local_class_path
-
     def get_remote_class(self, remote_class_path, local_class_path):
         """
-        fetch remote service class with better performance and Better performance
+        fetch remote service class
         :param remote_class_path:
         :param local_class_path:
         """
