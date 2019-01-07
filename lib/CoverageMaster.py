@@ -111,6 +111,14 @@ class CoverageMaster(object):
                 selective_copy(local_temp_coverage_class_path, local_coverage_class_path, ".class")
                 rmdir_rf(local_temp_coverage_class_path)
 
+        # Clean temp service directory
+        if remote_class_path.endswith('/'):
+            service_dir = remote_class_path.split("/")[-2]
+        else:
+            service_dir = remote_class_path.split("/")[-1]
+
+        local_service_dir = os.path.join(local_class_path, service_dir)
+        rmdir_rf(local_service_dir)
         self.coverage_info['class'] = local_class_path
 
     def get_git_code(self, local_src_path, old_commit, new_commit, old_branch, jobname, job_url):
