@@ -522,7 +522,4 @@ def test_generate():
 
 
 if __name__ == '__main__':
-    if sys.version_info[0] < 3:
-        reload(sys)
-        sys.setdefaultencoding('utf-8')
     main()
