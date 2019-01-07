@@ -62,7 +62,7 @@ def scp_to_remote(host, user, passwd, remote_path, local_path):
     remote_cmd("{}@{}".format(user, host), passwd, remote_mk_dir_cmd)
     scp_cmd = 'scp -r ' + local_path + " " + user + "@" + host + ":" + remote_path
     ssh = pexpect.spawn('/bin/bash', ['-c', scp_cmd], timeout=1200)
-    print("【run scp cmd】" + scp_cmd)
+    print("【Copying to remote】from {} to {}".format(local_path, remote_path))
     pwd_count = 0
     while 1:
         try:
@@ -102,11 +102,11 @@ def get_from_remote(host, user, passwd, remote_path, local_path):
         run_cmd("mkdir -p {}".format(local_path))
 
     if not os.path.exists(local_path):
-        print("mkdir {} failed".format(local_path))
+        print("Create {} failed.".format(local_path))
         return -1
 
     scp_cmd = "scp -r {}@{}:{} {}".format(user, host, remote_path, local_path)
-    print("【" + scp_cmd + "】")
+    print("【Copying to local】from {} to {}".format(remote_path, local_path))
     ssh = pexpect.spawn('/bin/bash', ['-c', scp_cmd], timeout=1200)
     pwd_count = 0
     while 1:
