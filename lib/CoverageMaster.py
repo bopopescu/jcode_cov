@@ -67,18 +67,19 @@ class CoverageMaster(object):
 
         local_time = time.strftime("%Y-%m-%d-%H-%M-%S", time.localtime())
 
-        exec_name = os.path.join(self.local_output_path, self.p_record.plus_name + local_time + "_jacoco.exec")
+        exec_name_s = "{}_{}_jacoco.exec".format(self.p_record.plus_name, local_time)
+        exec_name_f = os.path.join(self.local_output_path, exec_name_s)
         run_jar_cmd = "java -jar {} {} {} dump {}".format(
-            self.remote_dump_jar_path, self.p_record.host, port, exec_name)
+            self.remote_dump_jar_path, self.p_record.host, port, exec_name_f)
         run_cmd(run_jar_cmd)
 
-        self.coverage_info['exec'] = exec_name
+        self.coverage_info['exec'] = exec_name_f
 
         local_class_path = os.path.join(self.local_output_path,
-                                        "webroot_{}{}".format(self.p_record.plus_name, local_time))
+                                        "webroot_{}_{}".format(self.p_record.plus_name, local_time))
         self.get_remote_class(remote_class_path, local_class_path)
 
-        local_src_path = os.path.join(self.local_output_path, "src_{}{}".format(self.p_record.plus_name, local_time))
+        local_src_path = os.path.join(self.local_output_path, "src_{}_{}".format(self.p_record.plus_name, local_time))
         # comment it out temporarily for qcs auto cov
         # jobname = os.path.abspath(os.path.join(os.path.dirname(__file__), os.pardir, os.pardir)).split('/')[-1]
 
