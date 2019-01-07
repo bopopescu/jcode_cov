@@ -98,6 +98,7 @@ def get_from_remote(host, user, passwd, remote_path, local_path):
     """
     # This directory does not require super permissions
     cmd = "mkdir -p {} && chmod 777 {}".format(local_path, local_path)
+    print("Create directory {} and set its permission with rwx.".format(local_path))
     if run_cmd(cmd) is False:
         run_cmd("mkdir -p {}".format(local_path))
 
@@ -139,7 +140,6 @@ def run_cmd(cmd, exception_on_errors=True):
     :return:
     """
     try:
-        print("【cmd】" + cmd)
         process = subprocess.Popen(cmd, shell=True,
                                    stdout=subprocess.PIPE, stderr=subprocess.PIPE)
     except Exception as err:

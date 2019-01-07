@@ -176,7 +176,6 @@ class CoverageMaster(object):
 
         self.coverage_info['src'] = local_src_path
 
-        print(cmd)
         run_cmd(cmd)
         if len(os.listdir(src_space)) < 1:
             clog.error("Git fetch failed.")
