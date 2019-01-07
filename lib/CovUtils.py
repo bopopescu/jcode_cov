@@ -3,7 +3,14 @@
 #
 
 import os
+import sys
+import stat
+import errno
+import shutil
+import traceback
 import subprocess
+from pprint import pprint
+from zipfile import ZipFile
 from qcs_env_coverage.thirdparts import pexpect
 
 
@@ -153,9 +160,90 @@ def run_cmd(cmd, exception_on_errors=True):
     return True
 
 
-def mkdir(path):
+def mkdir_p(path):
+    try:
+        os.makedirs(path)
+    except OSError as exc:  # Python > 2.5
+        if exc.errno == errno.EEXIST and os.path.isdir(path):
+            pass
+        else:
+            raise
+
+
+def handle_error(func, path, exc_info):
     """
+    Handle the error that occurred and call back the handler function
+    :param func:
+    :param path:
+    :param exc_info:
+    """
+    print('Handling Error for file ', path)
+    print(exc_info)
+    if not os.access(path, os.W_OK):
+        print('Hello')
+        os.chmod(path, stat.S_IWUSR)
+        func(path)
+
+
+def rmdir_rf(path):
+    """
+    Remove directories and their contents recursively
     :param path:
     """
-    cmd = "mkdir {}".format(path)
-    run_cmd(cmd)
+    shutil.rmtree(path, onerror=handle_error)
+
+
+def is_archive(filename):
+    """
+    Check file suffixes
+    :param filename:
+    :return:
+    """
+    ext = filename[-4:]
+
+    if ext in [".war", ".jar"]:
+        return True
+    return False
+
+
+def get_files_recursively(start_directory, filter_extension=None):
+    """
+    Collect specified file extension from source directory
+    :param start_directory:
+    :param filter_extension:
+    """
+    for root, _, files in os.walk(start_directory):
+        for file in files:
+            if filter_extension is None or file.lower().endswith(filter_extension):
+                yield os.path.join(root, file)
+
+
+def selective_copy(source, target, file_extension=None):
+    """
+    Copy source to target directory
+    :param source:
+    :param target:
+    :param file_extension:
+    """
+    for file in get_files_recursively(source, file_extension):
+        try:
+            shutil.copy2(file, target)
+            print("Copying {} to {}".format(file, target))
+        except shutil.Error as e:
+            print('Error: %s' % e)
+        except IOError as e:
+            print('Error: %s' % e.strerror)
+
+
+def extract_pack(pack, target_dir):
+    """
+    Extract the compressed packages into the specified directory
+    :param pack:
+    :param target_dir:
+    """
+    try:
+        with ZipFile(pack, "r") as zf:
+            zf.extractall(target_dir)
+    except Exception as e:
+        exc_type, exc_value, exc_tb = sys.exc_info()
+        pprint(traceback.format_exception(exc_type, exc_value, exc_tb))

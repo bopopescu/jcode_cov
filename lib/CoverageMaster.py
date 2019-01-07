@@ -26,6 +26,8 @@ clog = CovLog()
 class CoverageMaster(object):
     def __init__(self, plus_name, template_name, host_ip, branch, git_url=None):
         self.p_record = PlusRecord(plus_name, template_name, host_ip, branch, git_url)
+        self.service_server_username = "sankuai"
+        self.service_server_userhome = "/home/{}".format(self.service_server_username)
         self.file_server_hostname = "10.4.236.69"
         self.file_server_passwd = "eptools321"
         self.local_output_path = os.path.join(root_path, 'output')
@@ -39,14 +41,14 @@ class CoverageMaster(object):
         jenkins salve cannot clear the server coverage data remotely.
         :param port:
         """
-        scp_to_remote(self.p_record.host, 'sankuai', "", "/home/sankuai/",
-                      self.remote_dump_jar_path)
+        scp_to_remote(self.p_record.host, self.service_server_username, "",
+                      "{}/".format(self.service_server_userhome), self.remote_dump_jar_path)
 
         clog.info("args[0]=ip, arg[1]=port, arg[2]=action")
 
-        run_jar_cmd = "java -jar /home/sankuai/architect-coverage-remote-dump.jar {} {} clean".format(
-            self.p_record.host, port)
-        remote_cmd("sankuai@{0}".format(self.p_record.host), "", run_jar_cmd)
+        run_jar_cmd = "java -jar {}/architect-coverage-remote-dump.jar {} {} clean".format(
+            self.service_server_userhome, self.p_record.host, port)
+        remote_cmd("{}@{}".format(self.service_server_username, self.p_record.host), "", run_jar_cmd)
 
     def dump(self, remote_class_path, port, jobname, old_commit, new_commit, old_branch, job_url):
         """
@@ -61,7 +63,7 @@ class CoverageMaster(object):
         """
         clog.info("args[0]=ip, arg[1]=port, arg[2]=action, arg[3]=exec path")
 
-        mkdir(self.local_output_path)
+        mkdir_p(self.local_output_path)
 
         local_time = time.strftime("%Y-%m-%d-%H-%M-%S", time.localtime())
 
@@ -85,14 +87,14 @@ class CoverageMaster(object):
         # comment it out temporarily for qcs auto cov
         # self.scp_output_to_remote(local_time, jobname)
 
-    def get_remote_class(self, remote_class_path, local_class_path):
+    def get_remote_class_bak(self, remote_class_path, local_class_path):
         """
         fetch remote service class
         :param remote_class_path:
         :param local_class_path:
         """
-        clog.info("get tested service classes")
-        mkdir(local_class_path)
+        clog.info("Extract tested service classes.")
+        mkdir_p(local_class_path)
 
         remote_class_path_list = remote_class_path.split(",")
 
@@ -100,25 +102,50 @@ class CoverageMaster(object):
             if ".war" in item:
                 index = item.find(".war") + len(".war")
                 tmp = item[:index]
-                cmd = "unzip {} -d {}".format(tmp, tmp.replace(".war", ""))
-                remote_cmd("sankuai@{0}".format(self.p_record.host), "", cmd)
+                cmd = "unzip {} -o -d {}".format(tmp, tmp.replace(".war", ""))
+                remote_cmd("{}@{}".format(self.service_server_username, self.p_record.host), "", cmd)
                 item = item.replace(".war", "")
 
-            get_from_remote(self.p_record.host, 'sankuai', '', item, local_class_path)
+            get_from_remote(self.p_record.host, self.service_server_username, "", item, local_class_path)
 
         path_list = os.listdir(local_class_path)
         for item in path_list:
             if item.endswith(".jar"):
                 tmp_classes = os.path.join(local_class_path, item.replace(".jar", ""))
-                mkdir(tmp_classes)
+                mkdir_p(tmp_classes)
                 tmp_classes += "/classes"
-                mkdir(tmp_classes)
+                mkdir_p(tmp_classes)
 
                 run_cmd("mv {} {}".format(os.path.join(local_class_path, item), tmp_classes))
 
                 jar_path = os.path.join(tmp_classes, item)
-                run_cmd("unzip -d {} {}".format(tmp_classes, jar_path))
+                run_cmd("unzip -o -d {} {}".format(tmp_classes, jar_path))
                 run_cmd("rm -rf {}".format(jar_path))
+
+        self.coverage_info['class'] = local_class_path
+
+    def get_remote_class(self, remote_class_path, local_class_path):
+        """
+        fetch remote service class with better performance and Better performance
+        :param remote_class_path:
+        :param local_class_path:
+        """
+        clog.info("Extract tested service classes.")
+        local_coverage_class_path = os.path.join(local_class_path, "coverage_classes")
+        local_temp_coverage_class_path = os.path.join(local_class_path, "temp_classes")
+        mkdir_p(local_coverage_class_path)
+
+        get_from_remote(self.p_record.host, self.service_server_username, "", remote_class_path, local_class_path)
+        selective_copy(local_class_path, local_coverage_class_path, ".class")
+
+        path_list = os.listdir(local_class_path)
+        for item in path_list:
+            if is_archive(item):
+                mkdir_p(local_temp_coverage_class_path)
+                pack_name = os.path.join(local_class_path, item)
+                extract_pack(pack_name, local_temp_coverage_class_path)
+                selective_copy(local_temp_coverage_class_path, local_coverage_class_path, ".class")
+                rmdir_rf(local_temp_coverage_class_path)
 
         self.coverage_info['class'] = local_class_path
 
@@ -134,8 +161,8 @@ class CoverageMaster(object):
         :return:
         """
 
-        clog.info("clone rd code to jenkins slave")
-        mkdir(local_src_path)
+        clog.info("Clone source code to jenkins slave.")
+        mkdir_p(local_src_path)
         src_space = local_src_path + os.sep + self.p_record.git.split('/')[-1].rsplit('.', 1)[0]
 
         cmd = "cd {} && git clone {} && cd {} && ".format(local_src_path, self.p_record.git, src_space)
@@ -383,7 +410,7 @@ class CoverageMaster(object):
         :param date_path:
         :param jobname:
         """
-        clog.info("output to remote")
+        clog.info("Put output to remote.")
         list_dir = os.listdir(self.local_output_path)
         jacoco_flag = False
         class_flag = False
@@ -394,7 +421,7 @@ class CoverageMaster(object):
                 class_flag = True
 
         if jacoco_flag and class_flag:
-            file_server_root = "/home/sankuai/jacocoReports"
+            file_server_root = "{}/jacocoReports".format(self.service_server_userhome)
             job_path = os.path.join(file_server_root, jobname)
             date_path = os.path.join(job_path, date_path)
 
@@ -440,7 +467,7 @@ def send_request(url):
             return json.loads(response.text)
         except:
             return response.text
-    clog.info("jenkins job {} error, or requests.exceptions.ConnectionError ".format(url))
+    clog.info("jenkins job {} error, or requests.exceptions.ConnectionError.".format(url))
     return None
 
 
