@@ -8,6 +8,7 @@ import math
 import json
 import time
 import argparse
+from datetime import datetime
 
 current_path = os.path.abspath(os.path.dirname(__file__))
 proj_path = os.path.abspath(os.path.join(current_path, "../.."))
@@ -65,7 +66,7 @@ class CoverageMaster(object):
 
         mkdir_p(self.local_output_path)
 
-        local_time = time.strftime("%Y-%m-%d-%H-%M-%S", time.localtime())
+        local_time = datetime.now().strftime('%Y-%m-%d-%H-%M-%S-%f')
 
         exec_name_s = "{}_{}_jacoco.exec".format(self.p_record.plus_name, local_time)
         exec_name_f = os.path.join(self.local_output_path, exec_name_s)
