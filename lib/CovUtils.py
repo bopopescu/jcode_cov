@@ -228,7 +228,6 @@ def selective_copy(source, target, file_extension=None):
     for file in get_files_recursively(source, file_extension):
         try:
             shutil.copy2(file, target)
-            print("Copying {} to {}".format(file, target))
         except shutil.Error as e:
             pass
         except IOError as e:
