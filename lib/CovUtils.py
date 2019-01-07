@@ -230,7 +230,7 @@ def selective_copy(source, target, file_extension=None):
             shutil.copy2(file, target)
             print("Copying {} to {}".format(file, target))
         except shutil.Error as e:
-            print('SError: %s' % e)
+            pass
         except IOError as e:
             print('IO Error: %s' % e.strerror)
 
