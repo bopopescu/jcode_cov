@@ -230,9 +230,9 @@ def selective_copy(source, target, file_extension=None):
             shutil.copy2(file, target)
             print("Copying {} to {}".format(file, target))
         except shutil.Error as e:
-            print('Error: %s' % e)
+            print('SError: %s' % e)
         except IOError as e:
-            print('Error: %s' % e.strerror)
+            print('IO Error: %s' % e.strerror)
 
 
 def extract_pack(pack, target_dir):
