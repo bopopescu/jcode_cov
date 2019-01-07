@@ -102,22 +102,21 @@ class CoverageMaster(object):
         get_from_remote(self.p_record.host, self.service_server_username, "", remote_class_path, local_class_path)
         selective_copy(local_class_path, local_coverage_class_path, ".class")
 
-        path_list = os.listdir(local_class_path)
+        if remote_class_path.endswith('/'):
+            service_dir = remote_class_path.split("/")[-2]
+        else:
+            service_dir = remote_class_path.split("/")[-1]
+        local_service_dir = os.path.join(local_class_path, service_dir)
+        path_list = os.listdir(local_service_dir)
         for item in path_list:
             if is_archive(item):
                 mkdir_p(local_temp_coverage_class_path)
-                pack_name = os.path.join(local_class_path, item)
+                pack_name = os.path.join(local_service_dir, item)
                 extract_pack(pack_name, local_temp_coverage_class_path)
                 selective_copy(local_temp_coverage_class_path, local_coverage_class_path, ".class")
                 rmdir_rf(local_temp_coverage_class_path)
 
         # Clean temp service directory
-        if remote_class_path.endswith('/'):
-            service_dir = remote_class_path.split("/")[-2]
-        else:
-            service_dir = remote_class_path.split("/")[-1]
-
-        local_service_dir = os.path.join(local_class_path, service_dir)
         rmdir_rf(local_service_dir)
         self.coverage_info['class'] = local_class_path
 
