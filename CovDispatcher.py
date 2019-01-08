@@ -30,9 +30,9 @@ class CoverageDispatcher(object):
         self.service_server_userhome = "/home/{}".format(self.service_server_username)
         self.file_server_hostname = "10.4.236.69"
         self.file_server_passwd = "eptools321"
-        self.local_output_path = os.path.join(root_path, 'output')
-        self.remote_dump_jar_path = os.path.join(root_path, "venv/architect-coverage-remote-dump.jar")
-        self.line_coverage_jar_path = os.path.join(root_path, "venv/architect-line-coverage.jar")
+        self.local_output_path = os.path.join(current_path, 'output')
+        self.remote_dump_jar_path = os.path.join(current_path, "venv/architect-coverage-remote-dump.jar")
+        self.line_coverage_jar_path = os.path.join(current_path, "venv/architect-line-coverage.jar")
         self.coverage_info = {}
 
     def clean(self, port):
