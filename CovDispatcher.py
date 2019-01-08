@@ -11,9 +11,8 @@ import argparse
 from datetime import datetime
 
 current_path = os.path.abspath(os.path.dirname(__file__))
-proj_path = os.path.abspath(os.path.join(current_path, "../.."))
 root_path = os.path.abspath(os.path.join(current_path, ".."))
-sys.path.insert(0, proj_path)
+sys.path.insert(0, root_path)
 
 from qcs_env_coverage.CovUtils import *
 from qcs_env_coverage.CovLogger import CoverageLogger
