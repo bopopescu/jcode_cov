@@ -13,7 +13,7 @@ sys.path.insert(0, root_path)
 from qcs_env_coverage.venv import connector
 
 
-class DataBaseOperator(object):
+class CoverageDataBaseOperator(object):
     def __init__(self, database_name, host, port, user, password, charset):
         self.database_name = database_name
         self.host = host
@@ -47,7 +47,7 @@ def get_jenkins_url_by_jobname(jobname):
     :param jobname:
     :return:
     """
-    dbo = DataBaseOperator("yuntu", "10.32.89.8", "5002", "yuntu_w", "66SxmfCrJUif2k", "utf8")
+    dbo = CoverageDataBaseOperator("yuntu", "10.32.89.8", "5002", "yuntu_w", "66SxmfCrJUif2k", "utf8")
 
     sql = """
             select

@@ -2,12 +2,15 @@
 # -*- coding:UTF-8 -*-
 #
 
-import time
+from datetime import datetime
 
 
-class CovLog(object):
+class CoverageLogger(object):
+    def __init__(self):
+        self.local_time = datetime.now().strftime('%Y-%m-%d %H:%M:%S.%f')
+
     def info(self, msg):
-        print("【Info {}】 {}".format(time.strftime('%Y-%m-%d %H:%M:%S', time.localtime(time.time())), msg))
+        print("【Info {}】 {}".format(self.local_time, msg))
 
     def error(self, msg):
-        print("【Error {}】 {}".format(time.strftime('%Y-%m-%d %H:%M:%S', time.localtime(time.time())), msg))
+        print("【Error {}】 {}".format(self.local_time, msg))

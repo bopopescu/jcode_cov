@@ -16,15 +16,15 @@ root_path = os.path.abspath(os.path.join(current_path, ".."))
 sys.path.insert(0, proj_path)
 
 from qcs_env_coverage.CovUtils import *
-from qcs_env_coverage.CovLogger import CovLog
+from qcs_env_coverage.CovLogger import CoverageLogger
 from qcs_env_coverage.CovPlusInfo import PlusRecord
 from qcs_env_coverage.venv import requests
 from qcs_env_coverage.venv import xmltodict
 
-clog = CovLog()
+clog = CoverageLogger()
 
 
-class CoverageMaster(object):
+class CoverageDispatcher(object):
     def __init__(self, plus_name, template_name, host_ip, branch, git_url=None):
         self.p_record = PlusRecord(plus_name, template_name, host_ip, branch, git_url)
         self.service_server_username = "sankuai"
@@ -491,9 +491,9 @@ def main():
         branch = "master"
 
     if git_url:
-        coverage_master = CoverageMaster(plus_name, template_name, host_ip, branch, git_url)
+        coverage_master = CoverageDispatcher(plus_name, template_name, host_ip, branch, git_url)
     else:
-        coverage_master = CoverageMaster(plus_name, template_name, host_ip, branch)
+        coverage_master = CoverageDispatcher(plus_name, template_name, host_ip, branch)
 
         if not coverage_master.p_record.flag:
             clog.error("获取plus配置失败")
@@ -518,7 +518,7 @@ def main():
 
 def test_generate():
     print("start")
-    coverage_master = CoverageMaster('test', 'test', 'test', 'test')
+    coverage_master = CoverageDispatcher('test', 'test', 'test', 'test')
     diffcov_txt = "/Users/OVERFLY/downloads/output-insurance-waimai-blankerror/src_meituan.insurance.\
     unification.wmaccess2018-03-16-13-15-07/insurance-waimai-package/diffcov.txt"
     diffcov_txt = "/Users/OVERFLY/downloads/output-correct/src_meituan.train.train.insuranceapi2018-03-21-16-39-26/\
