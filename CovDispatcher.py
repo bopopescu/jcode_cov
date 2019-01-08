@@ -31,8 +31,8 @@ class CoverageDispatcher(object):
         self.file_server_hostname = "10.4.236.69"
         self.file_server_passwd = "eptools321"
         self.local_output_path = os.path.join(current_path, 'output')
-        self.remote_dump_jar_path = os.path.join(current_path, "venv/architect-coverage-remote-dump.jar")
-        self.line_coverage_jar_path = os.path.join(current_path, "venv/architect-line-coverage.jar")
+        self.remote_dump_jar_path = os.path.join(current_path, "venv/qcs-env-coverage-remote-dump.jar")
+        self.line_coverage_jar_path = os.path.join(current_path, "venv/qcs-env-line-coverage.jar")
         self.coverage_info = {}
 
     def clean(self, port):
@@ -46,7 +46,7 @@ class CoverageDispatcher(object):
 
         clog.info("args[0]=ip, arg[1]=port, arg[2]=action")
 
-        run_jar_cmd = "java -jar {}/architect-coverage-remote-dump.jar {} {} clean".format(
+        run_jar_cmd = "java -jar {}/qcs-env-coverage-remote-dump.jar {} {} clean".format(
             self.service_server_userhome, self.p_record.host, port)
         remote_cmd("{}@{}".format(self.service_server_username, self.p_record.host), "", run_jar_cmd)
 
