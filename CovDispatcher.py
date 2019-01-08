@@ -15,11 +15,11 @@ proj_path = os.path.abspath(os.path.join(current_path, "../.."))
 root_path = os.path.abspath(os.path.join(current_path, ".."))
 sys.path.insert(0, proj_path)
 
-from qcs_env_coverage.lib.CovUtils import *
-from qcs_env_coverage.lib.CovLogger import CovLog
-from qcs_env_coverage.lib.PlusInfo import PlusRecord
-from qcs_env_coverage.thirdparts import requests
-from qcs_env_coverage.thirdparts import xmltodict
+from qcs_env_coverage.CovUtils import *
+from qcs_env_coverage.CovLogger import CovLog
+from qcs_env_coverage.CovPlusInfo import PlusRecord
+from qcs_env_coverage.venv import requests
+from qcs_env_coverage.venv import xmltodict
 
 clog = CovLog()
 
@@ -32,8 +32,8 @@ class CoverageMaster(object):
         self.file_server_hostname = "10.4.236.69"
         self.file_server_passwd = "eptools321"
         self.local_output_path = os.path.join(root_path, 'output')
-        self.remote_dump_jar_path = os.path.join(root_path, "thirdparts/architect-coverage-remote-dump.jar")
-        self.line_coverage_jar_path = os.path.join(root_path, "thirdparts/architect-line-coverage.jar")
+        self.remote_dump_jar_path = os.path.join(root_path, "venv/architect-coverage-remote-dump.jar")
+        self.line_coverage_jar_path = os.path.join(root_path, "venv/architect-line-coverage.jar")
         self.coverage_info = {}
 
     def clean(self, port):
@@ -200,10 +200,10 @@ class CoverageMaster(object):
 
         if os.path.isfile(src_space + "/diffcov.txt"):
             if not os.path.exists(self.local_output_path + "/diff2html"):
-                cmd = "cp -r {} {}".format(os.path.join(root_path, "thirdparts/diff2html"), self.local_output_path)
+                cmd = "cp -r {} {}".format(os.path.join(root_path, "venv/diff2html"), self.local_output_path)
                 run_cmd(cmd)
             self.store_to_report_dir(self.local_output_path, src_space)
-            source_diffcov_html = os.path.join(root_path, "thirdparts/diffcov.html")
+            source_diffcov_html = os.path.join(root_path, "venv/diffcov.html")
             target_diffcov_html = self.local_output_path + "/diff2html/" + self.p_record.plus_name + ".html"
 
             self.get_diff_cov_to_html(src_space + "/diffcov.txt", source_diffcov_html, target_diffcov_html)
@@ -525,7 +525,7 @@ def test_generate():
     travel-insurance/diffcov.txt"
     diffcov_txt = "/Users/OVERFLY/downloads/output/src_meituan.zc.cos.acquirerregister2018-03-14-15-14-15/\
     zcm-acquirer-register/diffcovtest.txt"
-    src_html = os.path.join(root_path, "thirdparts/diffcov.html")
+    src_html = os.path.join(root_path, "venv/diffcov.html")
     target_html = "/Users/OVERFLY/downloads/output-diffcovzero/diff2html/test_index.html"
     coverage_master.get_diff_cov_to_html(diffcov_txt, src_html, target_html)
 

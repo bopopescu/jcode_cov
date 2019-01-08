@@ -9,10 +9,10 @@ from time import sleep
 current_path = os.path.abspath(os.path.dirname(__file__))
 root_path = os.path.abspath(os.path.join(current_path, ".."))
 sys.path.insert(0, root_path)
-sys.path.insert(0, root_path + "/thirdparts")
+sys.path.insert(0, root_path + "/venv")
 
 from bs4 import BeautifulSoup
-from qcs_env_coverage.thirdparts import requests
+from qcs_env_coverage.venv import requests
 
 
 def get_login_data():

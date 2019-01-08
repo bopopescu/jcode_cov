@@ -11,7 +11,7 @@ import traceback
 import subprocess
 from pprint import pprint
 from zipfile import ZipFile
-from qcs_env_coverage.thirdparts import pexpect
+from qcs_env_coverage.venv import pexpect
 
 
 def remote_cmd(remote, passwd, cmd):

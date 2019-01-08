@@ -10,7 +10,7 @@ current_path = os.path.abspath(os.path.dirname(__file__))
 root_path = os.path.abspath(os.path.join(current_path, ".."))
 sys.path.insert(0, root_path)
 
-from qcs_env_coverage.thirdparts import connector
+from qcs_env_coverage.venv import connector
 
 
 class DataBaseOperator(object):
