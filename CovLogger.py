@@ -2,15 +2,16 @@
 # -*- coding:UTF-8 -*-
 #
 
-from datetime import datetime
-
 
 class CoverageLogger(object):
-    def __init__(self):
-        self.local_time = datetime.now().strftime('%Y-%m-%d %H:%M:%S.%f')
+    """Coverage logger"""
 
-    def info(self, msg):
-        print("【Info {}】 {}".format(self.local_time, msg))
+    def info(self, msg, local_time=None):
+        if not local_time:
+            print("【Info】 {}".format(msg))
+        print("【Info {}】 {}".format(local_time, msg))
 
-    def error(self, msg):
-        print("【Error {}】 {}".format(self.local_time, msg))
+    def error(self, msg, local_time=None):
+        if not local_time:
+            print("【Error】 {}".format(msg))
+        print("【Error {}】 {}".format(local_time, msg))

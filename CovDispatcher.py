@@ -8,7 +8,6 @@ import math
 import json
 import time
 import argparse
-from datetime import datetime
 
 current_path = os.path.abspath(os.path.dirname(__file__))
 root_path = os.path.abspath(os.path.join(current_path, ".."))
@@ -25,6 +24,7 @@ clog = CoverageLogger()
 
 class CoverageDispatcher(object):
     def __init__(self, plus_name, template_name, host_ip, branch, git_url=None):
+        self.coverage_info = {}
         self.p_record = PlusRecord(plus_name, template_name, host_ip, branch, git_url)
         self.service_server_username = "sankuai"
         self.service_server_userhome = "/home/{}".format(self.service_server_username)
@@ -33,7 +33,6 @@ class CoverageDispatcher(object):
         self.local_output_path = os.path.join(current_path, 'output')
         self.remote_dump_jar_path = os.path.join(current_path, "venv/qcs-env-coverage-remote-dump.jar")
         self.line_coverage_jar_path = os.path.join(current_path, "venv/qcs-env-line-coverage.jar")
-        self.coverage_info = {}
 
     def clean(self, port):
         """
@@ -44,7 +43,7 @@ class CoverageDispatcher(object):
         scp_to_remote(self.p_record.host, self.service_server_username, "",
                       "{}/".format(self.service_server_userhome), self.remote_dump_jar_path)
 
-        clog.info("args[0]=ip, arg[1]=port, arg[2]=action")
+        clog.info("args[0]=ip, arg[1]=port, arg[2]=action".format(), time_now())
 
         run_jar_cmd = "java -jar {}/qcs-env-coverage-remote-dump.jar {} {} clean".format(
             self.service_server_userhome, self.p_record.host, port)
@@ -61,11 +60,11 @@ class CoverageDispatcher(object):
         :param old_branch:
         :param job_url:
         """
-        clog.info("args[0]=ip, arg[1]=port, arg[2]=action, arg[3]=exec path")
+        clog.info("args[0]=ip, arg[1]=port, arg[2]=action, arg[3]=\"exec path\"", time_now())
 
         mkdir_p(self.local_output_path)
 
-        local_time = datetime.now().strftime('%Y-%m-%d-%H-%M-%S-%f')
+        local_time = time_now()
 
         exec_name_s = "{}_{}_jacoco.exec".format(self.p_record.plus_name, local_time)
         exec_name_f = os.path.join(self.local_output_path, exec_name_s)
@@ -94,7 +93,7 @@ class CoverageDispatcher(object):
         :param remote_class_path:
         :param local_class_path:
         """
-        clog.info("Extract tested service classes.")
+        clog.info("Extract tested service classes.", time_now())
         local_coverage_class_path = os.path.join(local_class_path, "coverage_classes")
         local_temp_coverage_class_path = os.path.join(local_class_path, "temp_classes")
         mkdir_p(local_coverage_class_path)
@@ -132,7 +131,7 @@ class CoverageDispatcher(object):
         :return:
         """
 
-        clog.info("Clone source code to jenkins slave.")
+        clog.info("Clone source code to jenkins slave.", time_now())
         mkdir_p(local_src_path)
         src_space = local_src_path + os.sep + self.p_record.git.split('/')[-1].rsplit('.', 1)[0]
 
@@ -166,15 +165,16 @@ class CoverageDispatcher(object):
         """
 
         if old_branch is not None:
-            clog.info("Fill in --old-branch, get {} & {} branch diff".format(old_branch, self.p_record.branch))
+            clog.info("Fill in --old-branch, get {} & {} branch diff".format(old_branch,
+                                                                             self.p_record.branch), time_now())
             old_commit = old_branch
             new_commit = self.p_record.branch
             cmd = "cd {} && git checkout {} && git checkout {}".format(src_space, old_commit, new_commit)
             run_cmd(cmd)
         else:
             if old_commit is None:
-                clog.info("Did not fill in --old-commit git old version parameters "
-                          "for source code，Git increments could not be obtained.")
+                clog.info("{} {}".format("Did not fill in --old-commit git old version parameters for source code",
+                                         "Git increments could not be obtained."), time_now())
                 return
 
             if new_commit is None:
@@ -184,8 +184,8 @@ class CoverageDispatcher(object):
                 new_commit = self.get_new_commit(src_space + "/git.log")
                 run_cmd("rm -rf {}/git.log".format(src_space))
                 if new_commit is None:
-                    clog.error("Did not fill in --new-commit git new version parameter "
-                               "and git log does not get the latest commit.")
+                    clog.error("{} {}".format("Did not fill in --new-commit git new version parameter",
+                                              "and git log does not get the latest commit."), time_now())
                     return
 
         cmd = "cd {} && git diff {} {} > diff.txt".format(src_space, old_commit, new_commit)
@@ -241,7 +241,7 @@ class CoverageDispatcher(object):
         """
         # url = get_jenkins_url_by_jobname(jobname)
         url = job_url
-        clog.info(url)
+        clog.info(url, time_now())
 
         if url is None:
             return ""
@@ -380,7 +380,7 @@ class CoverageDispatcher(object):
         :param date_path:
         :param jobname:
         """
-        clog.info("Put output to remote.")
+        clog.info("Put output to remote.", time_now())
         list_dir = os.listdir(self.local_output_path)
         jacoco_flag = False
         class_flag = False
@@ -437,7 +437,7 @@ def send_request(url):
             return json.loads(response.text)
         except:
             return response.text
-    clog.info("jenkins job {} error, or requests.exceptions.ConnectionError.".format(url))
+    clog.error("jenkins job {} error, or requests.exceptions.ConnectionError.".format(url))
     return None
 
 
@@ -452,7 +452,6 @@ def main():
     parser.add_argument("-i", "--host_ip", default=None, type=str, help="被测服务ip")
     parser.add_argument("-b", "--branch", default=None, type=str, help="代码branch")
     parser.add_argument("-u", "--job_url", default=None, type=str, help="统计覆盖率job的地址")
-    # 注意: 当plusname设置成appkey的name时候,git_url才需要指定, 因为如果不指定无法获取源码
     parser.add_argument("-g", "--git_url", default=None, type=str, help="git仓库地址")
     parser.add_argument("--old-commit", "--old_commit", default=None, type=str, help="git源代码老版本")
     parser.add_argument("--new-commit", "--new_commit", default=None, type=str, help="git源代码新版本")
@@ -468,7 +467,7 @@ def main():
     branch = args.branch
     git_url = args.git_url
 
-    clog.info("命令行参数:" + str(args))
+    clog.info("命令行参数:".format(str(args)), time_now())
     if plus_name is None:
         clog.error("未填写-n plusname发布项参数")
         return
@@ -499,11 +498,11 @@ def main():
             return
 
     if action == 'clean':
-        clog.info("clean操作：开始清理覆盖率数据")
+        clog.info("clean操作：开始清理覆盖率数据", time_now())
         coverage_master.clean(port)
 
     elif action == 'dump':
-        clog.info("dump操作：开始dump远程覆盖率数据")
+        clog.info("dump操作：开始dump远程覆盖率数据", time_now())
         jobname = args.jobname
         classes = args.classes
 

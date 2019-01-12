@@ -11,6 +11,7 @@ import traceback
 import subprocess
 from pprint import pprint
 from zipfile import ZipFile
+from datetime import datetime
 from qcs_env_coverage.venv import pexpect
 
 
@@ -98,7 +99,7 @@ def get_from_remote(host, user, passwd, remote_path, local_path):
     """
     # This directory does not require super permissions
     cmd = "mkdir -p {} && chmod 777 {}".format(local_path, local_path)
-    print("Create directory {} and set its permission with rwx.".format(local_path))
+    print("Create directory and set its permission with rwx.\n{}".format(local_path))
     if run_cmd(cmd) is False:
         run_cmd("mkdir -p {}".format(local_path))
 
@@ -107,7 +108,7 @@ def get_from_remote(host, user, passwd, remote_path, local_path):
         return -1
 
     scp_cmd = "scp -r {}@{}:{} {}".format(user, host, remote_path, local_path)
-    print("【Copying to local】from {} to {}".format(remote_path, local_path))
+    print("Copying to local from {} to {}".format(remote_path, local_path))
     ssh = pexpect.spawn('/bin/bash', ['-c', scp_cmd], timeout=1200)
     pwd_count = 0
     while 1:
@@ -246,3 +247,12 @@ def extract_pack(pack, target_dir):
     except Exception as e:
         exc_type, exc_value, exc_tb = sys.exc_info()
         pprint(traceback.format_exception(exc_type, exc_value, exc_tb))
+
+
+def time_now():
+    """
+    Get the local time dynamically
+    :return time object
+    """
+    local_time_now = type('now', (), {'__repr__': lambda _: str(datetime.now().strftime('%Y-%m-%d-%H-%M-%S-%f'))})()
+    return local_time_now
