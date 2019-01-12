@@ -467,7 +467,7 @@ def main():
     branch = args.branch
     git_url = args.git_url
 
-    clog.info("命令行参数:".format(args), time_now())
+    clog.info("命令行参数: {}".format(args), time_now())
     if plus_name is None:
         clog.error("未填写-n plusname发布项参数")
         return
