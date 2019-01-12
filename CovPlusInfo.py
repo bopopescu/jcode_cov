@@ -125,7 +125,6 @@ class PlusRecord(object):
         :return:
         """
         req_url = "{}{}?release_name={}".format(self.base_url, '/release_detail', self.plus_name)
-        print(req_url)
         response = requests.get(req_url, verify=False)
         sleep(1)
         if response.status_code != 200:
