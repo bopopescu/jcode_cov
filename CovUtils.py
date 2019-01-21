@@ -17,18 +17,18 @@ from qcs_env_coverage.venv import pexpect
 
 def remote_cmd(remote, passwd, cmd):
     """
-    Execute remote commands
+    Execute the command remotely
     :param remote:
     :param passwd:
     :param cmd:
     :return:
     """
-    ssh_cmd = 'ssh ' + remote + " \"" + cmd + "\""
-    ssh = pexpect.spawn('/bin/bash', ['-c', ssh_cmd], timeout=10)
+    ssh_cmd = "ssh " + remote + " \"" + cmd + "\""
+    ssh = pexpect.spawn("/bin/bash", ["-c", ssh_cmd], timeout=12)
     pwd_count = 0
     while 1:
         try:
-            index = ssh.expect(['\(yes/no\)\?', 'assword:'])
+            index = ssh.expect(["\(yes/no\)\?", "assword:"])
             if not ssh.isalive() and index == 0:
                 print("run ssh cmd success")
                 return 0
@@ -51,7 +51,7 @@ def remote_cmd(remote, passwd, cmd):
 
 def scp_to_remote(host, user, passwd, remote_path, local_path):
     """
-    super scp use pexpect
+    copy to remote by using ssh
     :param host:
     :param user:
     :param passwd:
@@ -61,13 +61,13 @@ def scp_to_remote(host, user, passwd, remote_path, local_path):
     """
     remote_mk_dir_cmd = "sudo mkdir -p {}".format(remote_path)
     remote_cmd("{}@{}".format(user, host), passwd, remote_mk_dir_cmd)
-    scp_cmd = 'scp -r ' + local_path + " " + user + "@" + host + ":" + remote_path
-    ssh = pexpect.spawn('/bin/bash', ['-c', scp_cmd], timeout=1200)
+    scp_cmd = "scp -rp " + local_path + " " + user + "@" + host + ":" + remote_path
+    ssh = pexpect.spawn("/bin/bash", ["-c", scp_cmd], timeout=600)
     print("【Copying to remote】from {} to {}".format(local_path, remote_path))
     pwd_count = 0
     while 1:
         try:
-            index = ssh.expect(['\(yes/no\)\?', 'assword:'])
+            index = ssh.expect(["\(yes/no\)\?", "assword:"])
             if not ssh.isalive() and index == 0:
                 print("run ssh cmd success")
                 return 0
@@ -89,7 +89,7 @@ def scp_to_remote(host, user, passwd, remote_path, local_path):
 
 def get_from_remote(host, user, passwd, remote_path, local_path):
     """
-    super scp use pexpect
+    copy from remote by using ssh
     :param host:
     :param user:
     :param passwd:
@@ -107,13 +107,13 @@ def get_from_remote(host, user, passwd, remote_path, local_path):
         print("Create {} failed.".format(local_path))
         return -1
 
-    scp_cmd = "scp -r {}@{}:{} {}".format(user, host, remote_path, local_path)
+    scp_cmd = "scp -rp {}@{}:{} {}".format(user, host, remote_path, local_path)
     print("Copying to local from {} to {}".format(remote_path, local_path))
-    ssh = pexpect.spawn('/bin/bash', ['-c', scp_cmd], timeout=1200)
+    ssh = pexpect.spawn("/bin/bash", ["-c", scp_cmd], timeout=600)
     pwd_count = 0
     while 1:
         try:
-            index = ssh.expect(['\(yes/no\)\?', 'assword:'])
+            index = ssh.expect(["\(yes/no\)\?", "assword:"])
             if not ssh.isalive() and index == 0:
                 print("run ssh cmd success")
                 return 0
@@ -135,7 +135,7 @@ def get_from_remote(host, user, passwd, remote_path, local_path):
 
 def run_cmd(cmd, exception_on_errors=True):
     """
-    Execute command locally
+    Execute the command locally
     :param cmd:
     :param exception_on_errors:
     :return:
@@ -144,17 +144,17 @@ def run_cmd(cmd, exception_on_errors=True):
         process = subprocess.Popen(cmd, shell=True,
                                    stdout=subprocess.PIPE, stderr=subprocess.PIPE)
     except Exception as err:
-        print('FAILED - run command: {}, {}'.format(cmd, err))
+        print("FAILED - run command: {}, {}".format(cmd, err))
         if exception_on_errors:
             raise Exception(err)
 
-    print('Please waiting..')
+    print("Please waiting..")
     stdout, stderr = process.communicate()
 
     return_code = process.returncode
     if return_code != 0:
-        err_msg = 'FAILED - none zero exit code in {}'.format(cmd)
-        print('{}; stdout: {}; stderr: {}'.format(err_msg, stdout, stderr))
+        err_msg = "FAILED - none zero exit code in {}".format(cmd)
+        print("{}; stdout: {}; stderr: {}".format(err_msg, stdout, stderr))
         if exception_on_errors:
             raise Exception(err_msg)
 
@@ -162,6 +162,10 @@ def run_cmd(cmd, exception_on_errors=True):
 
 
 def mkdir_p(path):
+    """
+    No error if existing, make parent directories as needed
+    :param path:
+    """
     try:
         os.makedirs(path)
     except OSError as exc:  # Python > 2.5
@@ -178,10 +182,10 @@ def handle_error(func, path, exc_info):
     :param path:
     :param exc_info:
     """
-    print('Handling Error for file ', path)
+    print("Handling Error for file ", path)
     print(exc_info)
     if not os.access(path, os.W_OK):
-        print('Hello')
+        print("Hello")
         os.chmod(path, stat.S_IWUSR)
         func(path)
 
@@ -232,7 +236,7 @@ def selective_copy(source, target, file_extension=None):
         except shutil.Error as e:
             pass
         except IOError as e:
-            print('IO Error: %s' % e.strerror)
+            print("IO Error: %s" % e.strerror)
 
 
 def extract_pack(pack, target_dir):
@@ -254,5 +258,5 @@ def time_now():
     Get the local time dynamically
     :return time object
     """
-    local_time_now = type('now', (), {'__repr__': lambda _: str(datetime.now().strftime('%Y-%m-%d-%H-%M-%S-%f'))})()
+    local_time_now = type("now", (), {"__repr__": lambda _: str(datetime.now().strftime("%Y-%m-%d-%H-%M-%S-%f"))})()
     return local_time_now

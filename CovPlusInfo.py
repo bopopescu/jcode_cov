@@ -21,16 +21,16 @@ def get_login_data():
     info = requests.get(url, verify=False)
     sleep(1)
     soup = BeautifulSoup(info.text, "html.parser")
-    inputs = soup.find_all('input')
+    inputs = soup.find_all("input")
 
     login_data = {
-        'username': "ep.delicious",
-        'password': "Meishitest123",
-        'service': "https://sso.sankuai.com/proxy?clientService=http%3A%2F%2Fplus.sankuai.com"
+        "username": "ep.delicious",
+        "password": "Meishitest123",
+        "service": "https://sso.sankuai.com/proxy?clientService=http%3A%2F%2Fplus.sankuai.com"
                    "%2Flogin%3Furl%3Dhttp%253A%252F%252Fplus.sankuai.com%252F",
-        'lt': inputs[-3].attrs['value'],
-        'execution': inputs[-1].attrs['value'],
-        '_eventId': 'submit',
+        "lt": inputs[-3].attrs["value"],
+        "execution": inputs[-1].attrs["value"],
+        "_eventId": "submit",
     }
 
     response = requests.request("POST", url, data=login_data, verify=False, headers={
@@ -43,15 +43,15 @@ def get_login_data():
     cookie = cookie[:-1]
 
     soup = BeautifulSoup(response.text, "html.parser")
-    inputs = soup.find_all('input')
-    sid = inputs[0].attrs['value']
-    time = inputs[1].attrs['value']
-    sign = inputs[2].attrs['value']
+    inputs = soup.find_all("input")
+    sid = inputs[0].attrs["value"]
+    time = inputs[1].attrs["value"]
+    sign = inputs[2].attrs["value"]
 
     plus_param = {
-        'SID': sid,
-        'time': time,
-        'sign': sign,
+        "SID": sid,
+        "time": time,
+        "sign": sign,
     }
     print(plus_param)
     plus_url = "http://plus.sankuai.com/login?url=http://plus.sankuai.com/"
@@ -83,7 +83,7 @@ def get_login_data():
 
 class PlusRecord(object):
     def __init__(self, plus_name, template_name, ip, branch, git_url=None):
-        self.base_url = 'http://plus.sankuai.com'
+        self.base_url = "http://plus.sankuai.com"
         self.plus_name = plus_name
         self.template_name = template_name
         self.username = "ep.delicious"
@@ -99,8 +99,8 @@ class PlusRecord(object):
             init_info = self.init()
             if init_info is not None:
                 self.flag = True
-                self.git = init_info['Repository']
-                self.commit = init_info['Commit']
+                self.git = init_info["Repository"]
+                self.commit = init_info["Commit"]
 
     def init(self):
         plus_detail = self.get_item_info_by_name()
@@ -108,7 +108,7 @@ class PlusRecord(object):
             print("获取Plus发布项{}配置失败".format(self.plus_name))
             return None
 
-        git_url = plus_detail['Repository']
+        git_url = plus_detail["Repository"]
         # commit = self.get_commit_by_host()
 
         return {"Repository": git_url, "Commit": None}
@@ -124,7 +124,7 @@ class PlusRecord(object):
         Get a deployment detail
         :return:
         """
-        req_url = "{}{}?release_name={}".format(self.base_url, '/release_detail', self.plus_name)
+        req_url = "{}{}?release_name={}".format(self.base_url, "/release_detail", self.plus_name)
         response = requests.get(req_url, verify=False)
         sleep(1)
         if response.status_code != 200:
@@ -165,7 +165,7 @@ class PlusRecord(object):
 
         if raw_detail is not None:
             for item in raw_detail:
-                if item['TemplateName'] == self.template_name:
+                if item["TemplateName"] == self.template_name:
                     records.append(item)
         return records
 
@@ -175,13 +175,13 @@ class PlusRecord(object):
         :param item_id:
         :return:
         """
-        last_daemon_job_id = records[0]['DaemonJobId']
+        last_daemon_job_id = records[0]["DaemonJobId"]
         last_detail_url = "{}/ui/release/{}/job/{}/detail".format(self.base_url, item_id, last_daemon_job_id)
 
         print(last_detail_url)
         try:
             response = requests.get(last_detail_url,
-                                    headers={'Cookie': 'deploytoken=91865de3-16f1-456c-9b88-311a1dfbb8e6'},
+                                    headers={"Cookie": "deploytoken=91865de3-16f1-456c-9b88-311a1dfbb8e6"},
                                     verify=False)
 
             sleep(1)
@@ -204,9 +204,9 @@ class PlusRecord(object):
         print(self.host)
 
 
-if __name__ == '__main__':
-    template_n = 'test'
-    plus_n = 'meituan.meishi.crm.ms'
+if __name__ == "__main__":
+    template_n = "test"
+    plus_n = "meituan.meishi.crm.ms"
 
     p_record = PlusRecord(plus_n, template_n, "10.5.245.163", "master")
     if p_record.git_url is None:

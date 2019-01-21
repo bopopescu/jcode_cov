@@ -30,7 +30,7 @@ class CoverageDispatcher(object):
         self.service_server_userhome = "/home/{}".format(self.service_server_username)
         self.file_server_hostname = "10.4.236.69"
         self.file_server_passwd = "eptools321"
-        self.local_output_path = os.path.join(current_path, 'output')
+        self.local_output_path = os.path.join(current_path, "output")
         self.remote_dump_jar_path = os.path.join(current_path, "venv/qcs-env-coverage-remote-dump.jar")
         self.line_coverage_jar_path = os.path.join(current_path, "venv/qcs-env-line-coverage.jar")
 
@@ -72,7 +72,7 @@ class CoverageDispatcher(object):
             self.remote_dump_jar_path, self.p_record.host, port, exec_name_f)
         run_cmd(run_jar_cmd)
 
-        self.coverage_info['exec'] = exec_name_f
+        self.coverage_info["exec"] = exec_name_f
 
         local_class_path = os.path.join(self.local_output_path,
                                         "webroot_{}_{}".format(self.p_record.plus_name, local_time))
@@ -80,7 +80,7 @@ class CoverageDispatcher(object):
 
         local_src_path = os.path.join(self.local_output_path, "src_{}_{}".format(self.p_record.plus_name, local_time))
         # comment it out temporarily for qcs auto cov
-        # jobname = os.path.abspath(os.path.join(os.path.dirname(__file__), os.pardir, os.pardir)).split('/')[-1]
+        # jobname = os.path.abspath(os.path.join(os.path.dirname(__file__), os.pardir, os.pardir)).split("/")[-1]
 
         self.get_git_code(local_src_path, old_commit, new_commit, old_branch, jobname, job_url)
 
@@ -101,7 +101,7 @@ class CoverageDispatcher(object):
         get_from_remote(self.p_record.host, self.service_server_username, "", remote_class_path, local_class_path)
         selective_copy(local_class_path, local_coverage_class_path, ".class")
 
-        if remote_class_path.endswith('/'):
+        if remote_class_path.endswith("/"):
             service_dir = remote_class_path.split("/")[-2]
         else:
             service_dir = remote_class_path.split("/")[-1]
@@ -117,7 +117,7 @@ class CoverageDispatcher(object):
 
         # Clean temp service directory
         rmdir_rf(local_service_dir)
-        self.coverage_info['class'] = local_class_path
+        self.coverage_info["class"] = local_class_path
 
     def get_git_code(self, local_src_path, old_commit, new_commit, old_branch, jobname, job_url):
         """
@@ -133,7 +133,7 @@ class CoverageDispatcher(object):
 
         clog.info("Clone source code to jenkins slave.", time_now())
         mkdir_p(local_src_path)
-        src_space = local_src_path + os.sep + self.p_record.git.split('/')[-1].rsplit('.', 1)[0]
+        src_space = local_src_path + os.sep + self.p_record.git.split("/")[-1].rsplit(".", 1)[0]
 
         cmd = "cd {} && git clone {} && cd {} && ".format(local_src_path, self.p_record.git, src_space)
 
@@ -144,7 +144,7 @@ class CoverageDispatcher(object):
         else:
             cmd += "git checkout {}".format(self.p_record.branch)
 
-        self.coverage_info['src'] = local_src_path
+        self.coverage_info["src"] = local_src_path
 
         run_cmd(cmd)
         if len(os.listdir(src_space)) < 1:
@@ -262,11 +262,11 @@ class CoverageDispatcher(object):
         except:
             return ""
 
-        path_list = ['project', 'publishers', 'hudson.plugins.jacoco.JacocoPublisher', 'exclusionPattern']
+        path_list = ["project", "publishers", "hudson.plugins.jacoco.JacocoPublisher", "exclusionPattern"]
         config_value = self.get_config_value(path_list, json_config)
 
         if config_value is None or len(config_value) == 0:
-            path_list = ['maven2-moduleset', 'publishers', 'hudson.plugins.jacoco.JacocoPublisher', 'exclusionPattern']
+            path_list = ["maven2-moduleset", "publishers", "hudson.plugins.jacoco.JacocoPublisher", "exclusionPattern"]
             config_value = self.get_config_value(path_list, json_config)
 
         return config_value
@@ -410,9 +410,9 @@ class CoverageDispatcher(object):
         """
         dump coverage to data file
         """
-        fd = open('coverage.json', 'a')
+        fd = open("coverage.json", "a")
         fd.write(json.dumps(self.coverage_info))
-        fd.write('\n')
+        fd.write("\n")
         fd.close()
 
 
@@ -497,11 +497,11 @@ def main():
             clog.error("获取plus配置失败")
             return
 
-    if action == 'clean':
+    if action == "clean":
         clog.info("clean操作：开始清理覆盖率数据", time_now())
         coverage_master.clean(port)
 
-    elif action == 'dump':
+    elif action == "dump":
         clog.info("dump操作：开始dump远程覆盖率数据", time_now())
         jobname = args.jobname
         classes = args.classes
@@ -516,7 +516,7 @@ def main():
 
 def test_generate():
     print("start")
-    coverage_master = CoverageDispatcher('test', 'test', 'test', 'test')
+    coverage_master = CoverageDispatcher("test", "test", "test", "test")
     diffcov_txt = "/Users/OVERFLY/downloads/output-insurance-waimai-blankerror/src_meituan.insurance.\
     unification.wmaccess2018-03-16-13-15-07/insurance-waimai-package/diffcov.txt"
     diffcov_txt = "/Users/OVERFLY/downloads/output-correct/src_meituan.train.train.insuranceapi2018-03-21-16-39-26/\
@@ -528,5 +528,5 @@ def test_generate():
     coverage_master.get_diff_cov_to_html(diffcov_txt, src_html, target_html)
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     main()
