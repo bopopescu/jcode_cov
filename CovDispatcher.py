@@ -43,7 +43,7 @@ class CoverageDispatcher(object):
         scp_to_remote(self.p_record.host, self.service_server_username, "",
                       "{}/".format(self.service_server_userhome), self.remote_dump_jar_path)
 
-        clog.info("args[0]=ip, arg[1]=port, arg[2]=action".format(), time_now())
+        clog.info("args[0]=ip, arg[1]=port, arg[2]=action", time_now())
 
         run_jar_cmd = "java -jar {}/qcs-env-coverage-remote-dump.jar {} {} clean".format(
             self.service_server_userhome, self.p_record.host, port)
