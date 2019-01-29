@@ -517,11 +517,11 @@ def main():
 def test_generate():
     print("start")
     coverage_master = CoverageDispatcher("test", "test", "test", "test")
-    diffcov_txt = "/Users/OVERFLY/downloads/output-insurance-waimai-blankerror/src_meituan.insurance.\
-    unification.wmaccess2018-03-16-13-15-07/insurance-waimai-package/diffcov.txt"
-    diffcov_txt = "/Users/OVERFLY/downloads/output-correct/src_meituan.train.train.insuranceapi2018-03-21-16-39-26/\
+    diffcov_txt = "/Users/OVERFLY/downloads/output-insurance-qcs-blankerror/src_meituan.insurance.\
+    unification.wmaccess2018-03-16-13-15-07/insurance-qcs-package/diffcov.txt"
+    diffcov_txt = "/Users/OVERFLY/downloads/output-correct/src_meituan.train.train.insuranceapi2018-12-21-16-39-26/\
     travel-insurance/diffcov.txt"
-    diffcov_txt = "/Users/OVERFLY/downloads/output/src_meituan.zc.cos.acquirerregister2018-03-14-15-14-15/\
+    diffcov_txt = "/Users/OVERFLY/downloads/output/src_meituan.zc.cos.acquirerregister2018-12-16-15-16-15/\
     zcm-acquirer-register/diffcovtest.txt"
     src_html = os.path.join(root_path, "venv/diffcov.html")
     target_html = "/Users/OVERFLY/downloads/output-diffcovzero/diff2html/test_index.html"

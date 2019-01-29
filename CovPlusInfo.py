@@ -11,8 +11,8 @@ root_path = os.path.abspath(os.path.join(current_path, ".."))
 sys.path.insert(0, root_path)
 sys.path.insert(0, root_path + "/venv")
 
-from bs4 import BeautifulSoup
 from qcs_env_coverage.venv import requests
+from qcs_env_coverage.venv.bs4 import BeautifulSoup
 
 
 def get_login_data():

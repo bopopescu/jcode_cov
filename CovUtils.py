@@ -7,6 +7,7 @@ import sys
 import stat
 import errno
 import shutil
+import zipfile
 import traceback
 import subprocess
 from pprint import pprint
@@ -233,10 +234,10 @@ def selective_copy(source, target, file_extension=None):
     for file in get_files_recursively(source, file_extension):
         try:
             shutil.copy2(file, target)
-        except shutil.Error as e:
+        except shutil.Error:
             pass
         except IOError as e:
-            print("IO Error: %s" % e.strerror)
+            print("IO Error: {}".format(e.strerror))
 
 
 def extract_pack(pack, target_dir):
@@ -248,7 +249,11 @@ def extract_pack(pack, target_dir):
     try:
         with ZipFile(pack, "r") as zf:
             zf.extractall(target_dir)
-    except Exception as e:
+    except zipfile.BadZipFile as zb:
+        print("BadZipFile: {}".format(zb))
+    except zipfile.LargeZipFile as zl:
+        print("LargeZipFile: {}".format(zl))
+    except Exception:
         exc_type, exc_value, exc_tb = sys.exc_info()
         pprint(traceback.format_exception(exc_type, exc_value, exc_tb))
 
