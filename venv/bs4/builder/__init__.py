@@ -1,22 +1,18 @@
-# Use of this source code is governed by the MIT license.
-__license__ = "MIT"
-
 from collections import defaultdict
 import itertools
 import sys
-from ..element import (
+from bs4.element import (
     CharsetMetaAttributeValue,
     ContentMetaAttributeValue,
-    HTMLAwareEntitySubstitution,
-    nonwhitespace_re
-)
+    whitespace_re
+    )
 
 __all__ = [
     'HTMLTreeBuilder',
     'SAXTreeBuilder',
     'TreeBuilder',
     'TreeBuilderRegistry',
-]
+    ]
 
 # Some useful features for a TreeBuilder to have.
 FAST = 'fast'
@@ -77,11 +73,9 @@ class TreeBuilderRegistry(object):
                 return candidate
         return None
 
-
 # The BeautifulSoup class will take feature lists from developers and use them
 # to look up builders in this registry.
 builder_registry = TreeBuilderRegistry()
-
 
 class TreeBuilder(object):
     """Turn a document into a Beautiful Soup object tree."""
@@ -93,21 +87,16 @@ class TreeBuilder(object):
     is_xml = False
     picklable = False
     preserve_whitespace_tags = set()
-    empty_element_tags = None  # A tag will be considered an empty-element
-    # tag when and only when it has no contents.
+    empty_element_tags = None # A tag will be considered an empty-element
+                              # tag when and only when it has no contents.
 
     # A value for these tag/attribute combinations is a space- or
     # comma-separated list of CDATA, rather than a single CDATA.
     cdata_list_attributes = {}
 
+
     def __init__(self):
         self.soup = None
-
-    def initialize_soup(self, soup):
-        """The BeautifulSoup object has been initialized and is now
-        being associated with the TreeBuilder.
-        """
-        self.soup = soup
 
     def reset(self):
         pass
@@ -174,7 +163,7 @@ class TreeBuilder(object):
                     # values. Split it into a list.
                     value = attrs[attr]
                     if isinstance(value, basestring):
-                        values = nonwhitespace_re.findall(value)
+                        values = whitespace_re.split(value)
                     else:
                         # html5lib sometimes calls setAttributes twice
                         # for the same tag when rearranging the parse
@@ -185,7 +174,6 @@ class TreeBuilder(object):
                         values = value
                     attrs[attr] = values
         return attrs
-
 
 class SAXTreeBuilder(TreeBuilder):
     """A Beautiful Soup treebuilder that listens for SAX events."""
@@ -198,11 +186,11 @@ class SAXTreeBuilder(TreeBuilder):
 
     def startElement(self, name, attrs):
         attrs = dict((key[1], value) for key, value in list(attrs.items()))
-        # print "Start %s, %r" % (name, attrs)
+        #print "Start %s, %r" % (name, attrs)
         self.soup.handle_starttag(name, attrs)
 
     def endElement(self, name):
-        # print "End %s" % name
+        #print "End %s" % name
         self.soup.handle_endtag(name)
 
     def startElementNS(self, nsTuple, nodeName, attrs):
@@ -212,7 +200,7 @@ class SAXTreeBuilder(TreeBuilder):
     def endElementNS(self, nsTuple, nodeName):
         # Throw away (ns, nodeName) for now.
         self.endElement(nodeName)
-        # handler.endElementNS((ns, node.nodeName), node.nodeName)
+        #handler.endElementNS((ns, node.nodeName), node.nodeName)
 
     def startPrefixMapping(self, prefix, nodeValue):
         # Ignore the prefix for now.
@@ -239,24 +227,9 @@ class HTMLTreeBuilder(TreeBuilder):
     Such as which tags are empty-element tags.
     """
 
-    preserve_whitespace_tags = HTMLAwareEntitySubstitution.preserve_whitespace_tags
-    empty_element_tags = set([
-        # These are from HTML5.
-        'area', 'base', 'br', 'col', 'embed', 'hr', 'img', 'input', 'keygen', 'link', 'menuitem', 'meta', 'param',
-        'source', 'track', 'wbr',
-
-        # These are from earlier versions of HTML and are removed in HTML5.
-        'basefont', 'bgsound', 'command', 'frame', 'image', 'isindex', 'nextid', 'spacer'
-    ])
-
-    # The HTML standard defines these as block-level elements. Beautiful
-    # Soup does not treat these elements differently from other elements,
-    # but it may do so eventually, and this information is available if
-    # you need to use it.
-    block_elements = set(
-        ["address", "article", "aside", "blockquote", "canvas", "dd", "div", "dl", "dt", "fieldset", "figcaption",
-         "figure", "footer", "form", "h1", "h2", "h3", "h4", "h5", "h6", "header", "hr", "li", "main", "nav",
-         "noscript", "ol", "output", "p", "pre", "section", "table", "tfoot", "ul", "video"])
+    preserve_whitespace_tags = set(['pre', 'textarea'])
+    empty_element_tags = set(['br' , 'hr', 'input', 'img', 'meta',
+                              'spacer', 'link', 'frame', 'base'])
 
     # The HTML standard defines these attributes as containing a
     # space-separated list of values, not a single value. That is,
@@ -266,21 +239,21 @@ class HTMLTreeBuilder(TreeBuilder):
     # a list of values if possible. Upon output, the list will be
     # converted back into a string.
     cdata_list_attributes = {
-        "*": ['class', 'accesskey', 'dropzone'],
-        "a": ['rel', 'rev'],
-        "link": ['rel', 'rev'],
-        "td": ["headers"],
-        "th": ["headers"],
-        "td": ["headers"],
-        "form": ["accept-charset"],
-        "object": ["archive"],
+        "*" : ['class', 'accesskey', 'dropzone'],
+        "a" : ['rel', 'rev'],
+        "link" :  ['rel', 'rev'],
+        "td" : ["headers"],
+        "th" : ["headers"],
+        "td" : ["headers"],
+        "form" : ["accept-charset"],
+        "object" : ["archive"],
 
         # These are HTML5 specific, as are *.accesskey and *.dropzone above.
-        "area": ["rel"],
-        "icon": ["sizes"],
-        "iframe": ["sandbox"],
-        "output": ["for"],
-    }
+        "area" : ["rel"],
+        "icon" : ["sizes"],
+        "iframe" : ["sandbox"],
+        "output" : ["for"],
+        }
 
     def set_up_substitutions(self, tag):
         # We are only interested in <meta> tags
@@ -315,7 +288,6 @@ class HTMLTreeBuilder(TreeBuilder):
 
         return (meta_encoding is not None)
 
-
 def register_treebuilders_from(module):
     """Copy TreeBuilders from the given module into this module."""
     # I'm fairly sure this is not the best way to do this.
@@ -329,28 +301,23 @@ def register_treebuilders_from(module):
             # Register the builder while we're at it.
             this_module.builder_registry.register(obj)
 
-
 class ParserRejectedMarkup(Exception):
     pass
-
 
 # Builders are registered in reverse order of priority, so that custom
 # builder registrations will take precedence. In general, we want lxml
 # to take precedence over html5lib, because it's faster. And we only
 # want to use HTMLParser as a last result.
 from . import _htmlparser
-
 register_treebuilders_from(_htmlparser)
 try:
     from . import _html5lib
-
     register_treebuilders_from(_html5lib)
 except ImportError:
     # They don't have html5lib installed.
     pass
 try:
     from . import _lxml
-
     register_treebuilders_from(_lxml)
 except ImportError:
     # They don't have lxml installed.

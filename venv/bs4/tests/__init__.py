@@ -1,1 +1,1 @@
-"""The beautifulsoup tests."""
+"The beautifulsoup tests."
