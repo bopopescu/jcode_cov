@@ -43,8 +43,6 @@ class CoverageDispatcher(object):
         scp_to_remote(self.p_record.host, self.service_server_username, "",
                       "{}/".format(self.service_server_userhome), self.remote_dump_jar_path)
 
-        clog.info("args[0]=ip, arg[1]=port, arg[2]=action")
-
         run_jar_cmd = "java -jar {}/qcs-env-coverage-remote-dump.jar {} {} clean".format(
             self.service_server_userhome, self.p_record.host, port)
         remote_cmd("{}@{}".format(self.service_server_username, self.p_record.host), "", run_jar_cmd)
@@ -60,8 +58,6 @@ class CoverageDispatcher(object):
         :param old_branch:
         :param job_url:
         """
-        clog.info("args[0]=ip, arg[1]=port, arg[2]=action, arg[3]=\"exec path\"")
-
         mkdir_p(self.local_output_path)
 
         local_time = time_now()
