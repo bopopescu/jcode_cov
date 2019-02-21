@@ -14,12 +14,12 @@ root_path = os.path.abspath(os.path.join(current_path, ".."))
 sys.path.insert(0, root_path)
 
 from qcs_env_coverage.CovUtils import *
-from qcs_env_coverage.CovLogger import CoverageLogger
+from qcs_env_coverage.CovLogger import CoverageLog
 from qcs_env_coverage.CovPlusInfo import PlusRecord
 from qcs_env_coverage.venv import requests
 from qcs_env_coverage.venv import xmltodict
 
-clog = CoverageLogger()
+clog = CoverageLog.get_logger(os.path.basename(__file__))
 
 
 class CoverageDispatcher(object):
@@ -43,7 +43,7 @@ class CoverageDispatcher(object):
         scp_to_remote(self.p_record.host, self.service_server_username, "",
                       "{}/".format(self.service_server_userhome), self.remote_dump_jar_path)
 
-        clog.info("args[0]=ip, arg[1]=port, arg[2]=action", time_now())
+        clog.info("args[0]=ip, arg[1]=port, arg[2]=action")
 
         run_jar_cmd = "java -jar {}/qcs-env-coverage-remote-dump.jar {} {} clean".format(
             self.service_server_userhome, self.p_record.host, port)
@@ -60,7 +60,7 @@ class CoverageDispatcher(object):
         :param old_branch:
         :param job_url:
         """
-        clog.info("args[0]=ip, arg[1]=port, arg[2]=action, arg[3]=\"exec path\"", time_now())
+        clog.info("args[0]=ip, arg[1]=port, arg[2]=action, arg[3]=\"exec path\"")
 
         mkdir_p(self.local_output_path)
 
@@ -93,7 +93,7 @@ class CoverageDispatcher(object):
         :param remote_class_path:
         :param local_class_path:
         """
-        clog.info("Extract tested service classes.", time_now())
+        clog.info("Extract tested service classes.")
         local_coverage_class_path = os.path.join(local_class_path, "coverage_classes")
         local_temp_coverage_class_path = os.path.join(local_class_path, "temp_classes")
         mkdir_p(local_coverage_class_path)
@@ -131,7 +131,7 @@ class CoverageDispatcher(object):
         :return:
         """
 
-        clog.info("Clone source code to jenkins slave.", time_now())
+        clog.info("Clone source code to jenkins slave.")
         mkdir_p(local_src_path)
         src_space = local_src_path + os.sep + self.p_record.git.split("/")[-1].rsplit(".", 1)[0]
 
@@ -165,8 +165,7 @@ class CoverageDispatcher(object):
         """
 
         if old_branch is not None:
-            clog.info("Fill in --old-branch, get {} & {} branch diff".format(old_branch,
-                                                                             self.p_record.branch), time_now())
+            clog.info("Fill in --old-branch, get {} & {} branch diff".format(old_branch, self.p_record.branch))
             old_commit = old_branch
             new_commit = self.p_record.branch
             cmd = "cd {} && git checkout {} && git checkout {}".format(src_space, old_commit, new_commit)
@@ -174,7 +173,7 @@ class CoverageDispatcher(object):
         else:
             if old_commit is None:
                 clog.info("{} {}".format("Did not fill in --old-commit git old version parameters for source code",
-                                         "Git increments could not be obtained."), time_now())
+                                         "Git increments could not be obtained."))
                 return
 
             if new_commit is None:
@@ -185,7 +184,7 @@ class CoverageDispatcher(object):
                 run_cmd("rm -rf {}/git.log".format(src_space))
                 if new_commit is None:
                     clog.error("{} {}".format("Did not fill in --new-commit git new version parameter",
-                                              "and git log does not get the latest commit."), time_now())
+                                              "and git log does not get the latest commit."))
                     return
 
         cmd = "cd {} && git diff {} {} > diff.txt".format(src_space, old_commit, new_commit)
@@ -241,7 +240,7 @@ class CoverageDispatcher(object):
         """
         # url = get_jenkins_url_by_jobname(jobname)
         url = job_url
-        clog.info(url, time_now())
+        clog.info(url)
 
         if url is None:
             return ""
@@ -380,7 +379,7 @@ class CoverageDispatcher(object):
         :param date_path:
         :param jobname:
         """
-        clog.info("Put output to remote.", time_now())
+        clog.info("Put output to remote.")
         list_dir = os.listdir(self.local_output_path)
         jacoco_flag = False
         class_flag = False
@@ -467,7 +466,7 @@ def main():
     branch = args.branch
     git_url = args.git_url
 
-    clog.info("命令行参数: {}".format(args), time_now())
+    clog.info("命令行参数: {}".format(args))
     if plus_name is None:
         clog.error("未填写-n plusname发布项参数")
         return
@@ -498,11 +497,11 @@ def main():
             return
 
     if action == "clean":
-        clog.info("clean操作：开始清理覆盖率数据", time_now())
+        clog.info("clean操作：开始清理覆盖率数据")
         coverage_master.clean(port)
 
     elif action == "dump":
-        clog.info("dump操作：开始dump远程覆盖率数据", time_now())
+        clog.info("dump操作：开始dump远程覆盖率数据")
         jobname = args.jobname
         classes = args.classes
 
