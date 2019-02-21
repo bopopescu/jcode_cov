@@ -9,6 +9,11 @@ import time
 from datetime import datetime
 from qcs_env_coverage.venv import colorlog
 
+PROJECT_ROOT = os.path.abspath(os.path.join(os.path.dirname(__file__)))
+LOG_DIR = os.path.join(PROJECT_ROOT, 'out')
+LOG_TIME = datetime.fromtimestamp(time.time()).strftime('%Y-%m-%d-%H-%M-%S-%f')
+default_log_file = os.path.join(LOG_DIR, '{}.log'.format(LOG_TIME))
+
 
 def h1(self, title):
     self.info('=' * 120)
@@ -43,6 +48,7 @@ def sep3(self):
 def _decorate_logger(logger):
     """
     Decorate logger with custom methods
+    :param logger:
     """
     logger.h1 = types.MethodType(h1, logger)
     logger.h2 = types.MethodType(h2, logger)
@@ -52,15 +58,15 @@ def _decorate_logger(logger):
     logger.sep3 = types.MethodType(sep3, logger)
 
 
-PROJECT_ROOT = os.path.abspath(os.path.join(os.path.dirname(__file__)))
-LOG_DIR = os.path.join(PROJECT_ROOT, 'out')
-LOG_TIME = datetime.fromtimestamp(time.time()).strftime('%Y-%m-%d-%H-%M-%S-%f')
-default_log_file = os.path.join(LOG_DIR, '{}.log'.format(LOG_TIME))
-
-
 class CoverageLog(object):
     @classmethod
     def get_logger(cls, name=None, log_file=default_log_file):
+        """
+        Get coverage logger
+        :param name:
+        :param log_file:
+        :return:
+        """
         # Get root logger if name is None
         mylogger = colorlog.getLogger(name)
         mylogger.setLevel(logging.DEBUG)
