@@ -63,9 +63,9 @@ class CoverageLog(object):
         # Get root logger if name is None
         mylogger = colorlog.getLogger(name)
         mylogger.setLevel(logging.DEBUG)
-        formatter = logging.Formatter('[%(asctime)s][%(name)s][%(levelname)s] - %(message)s')
+        formatter = logging.Formatter('[%(asctime)s][%(levelname)s] - %(message)s')
         color_formatter = formatter = colorlog.ColoredFormatter(
-            "%(log_color)s[%(asctime)s][%(name)s][%(levelname)s] - %(message)s",
+            "%(log_color)s[%(asctime)s][%(levelname)s] - %(message)s",
             datefmt=None,
             reset=True,
             log_colors={
