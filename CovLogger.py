@@ -68,7 +68,7 @@ class CoverageLog(object):
             datefmt=None,
             reset=True,
             log_colors={
-                'DEBUG': 'green',
+                'DEBUG': 'cyan',
                 'INFO': 'blue',
                 'WARNING': 'purple',
                 'ERROR': 'red',
