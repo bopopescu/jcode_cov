@@ -3,10 +3,8 @@
 #
 
 import os
-import time
 import types
 import logging
-from datetime import datetime
 from qcs_env_coverage.CovUtils import time_now
 from qcs_env_coverage.venv import colorlog
 
