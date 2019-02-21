@@ -172,8 +172,8 @@ class CoverageDispatcher(object):
             run_cmd(cmd)
         else:
             if old_commit is None:
-                clog.info("{} {}".format("Did not fill in --old-commit git old version parameters for source code",
-                                         "Git increments could not be obtained."))
+                clog.info("{}, {}".format("Did not fill in --old-commit for src code",
+                                          "git increments could not be obtained."))
                 return
 
             if new_commit is None:
@@ -183,8 +183,8 @@ class CoverageDispatcher(object):
                 new_commit = self.get_new_commit(src_space + "/git.log")
                 run_cmd("rm -rf {}/git.log".format(src_space))
                 if new_commit is None:
-                    clog.error("{} {}".format("Did not fill in --new-commit git new version parameter",
-                                              "and git log does not get the latest commit."))
+                    clog.error("{}, {}".format("Did not fill in --new-commit for src code",
+                                               "git log does not get the latest commit."))
                     return
 
         cmd = "cd {} && git diff {} {} > diff.txt".format(src_space, old_commit, new_commit)
