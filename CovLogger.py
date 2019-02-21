@@ -7,6 +7,7 @@ import time
 import types
 import logging
 from datetime import datetime
+from qcs_env_coverage.CovUtils import time_now
 from qcs_env_coverage.venv import colorlog
 
 
@@ -54,7 +55,7 @@ def _decorate_logger(logger):
 
 PROJECT_ROOT = os.path.abspath(os.path.join(os.path.dirname(__file__)))
 LOG_DIR = os.path.join(PROJECT_ROOT, 'out')
-default_log_file = os.path.join(LOG_DIR, '%s.log' % datetime.fromtimestamp(time.time()).strftime('%Y%m%d%H%M%S'))
+default_log_file = os.path.join(LOG_DIR, '{}.log'.format(time_now()))
 
 
 class CoverageLog(object):
