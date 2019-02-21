@@ -131,7 +131,7 @@ class CoverageDispatcher(object):
         :return:
         """
 
-        clog.info("Clone source code to jenkins slave.")
+        clog.info("Clone source code to local.")
         mkdir_p(local_src_path)
         src_space = local_src_path + os.sep + self.p_record.git.split("/")[-1].rsplit(".", 1)[0]
 
@@ -466,7 +466,7 @@ def main():
     branch = args.branch
     git_url = args.git_url
 
-    clog.info("命令行参数: {}".format(args))
+    clog.info("{}".format(args))
     if plus_name is None:
         clog.error("未填写-n plusname发布项参数")
         return
