@@ -46,8 +46,10 @@ def remote_cmd(remote, passwd, cmd):
                     ssh.sendline(passwd)
                 pwd_count += 1
         except pexpect.EOF:
+            clog.error("pexpect reported EOF - VMM exited unexpectedly")
             break
         except pexpect.TIMEOUT:
+            clog.error("pexpect Timeout reached")
             break
     clog.info("【run ssh cmd】" + ssh_cmd)
     return 0
@@ -85,8 +87,10 @@ def scp_to_remote(host, user, passwd, remote_path, local_path):
                     ssh.sendline(passwd)
                     pwd_count += 1
         except pexpect.EOF:
+            clog.error("pexpect reported EOF - VMM exited unexpectedly")
             break
         except pexpect.TIMEOUT:
+            clog.error("pexpect Timeout reached")
             break
     return 0
 
@@ -131,8 +135,10 @@ def get_from_remote(host, user, passwd, remote_path, local_path):
                     ssh.sendline(passwd)
                     pwd_count += 1
         except pexpect.EOF:
+            clog.error("pexpect reported EOF - VMM exited unexpectedly")
             break
         except pexpect.TIMEOUT:
+            clog.error("pexpect Timeout reached")
             break
     return 0
 
