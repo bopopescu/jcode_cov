@@ -150,7 +150,7 @@ def run_cmd(cmd, exception_on_errors=True):
     except Exception as err:
         clog.error("FAILED - run command: {}, {}".format(cmd, err))
         if exception_on_errors:
-            raise Exception(err)
+            raise Exception(clog.error(err))
 
     clog.debug("Please waiting..")
     stdout, stderr = process.communicate()
@@ -160,7 +160,7 @@ def run_cmd(cmd, exception_on_errors=True):
         err_msg = "FAILED - none zero exit code in {}".format(cmd)
         clog.error("{}; stdout: {}; stderr: {}".format(err_msg, stdout, stderr))
         if exception_on_errors:
-            raise Exception(err_msg)
+            raise Exception(clog.error(err_msg))
 
     return True
 
