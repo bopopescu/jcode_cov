@@ -62,7 +62,7 @@ class CoverageLog(object):
     @classmethod
     def get_logger(cls, name=None, log_file=default_log_file):
         """
-        Get coverage logger
+        Coverage logger with a default colored formatter
         :param name:
         :param log_file:
         :return:
@@ -86,16 +86,16 @@ class CoverageLog(object):
             style='%'
         )
 
-        ch = colorlog.StreamHandler()
-        ch.setLevel(logging.DEBUG)
-        ch.setFormatter(color_formatter)
-        mylogger.addHandler(ch)
+        s_handler = colorlog.StreamHandler()
+        s_handler.setLevel(logging.DEBUG)
+        s_handler.setFormatter(color_formatter)
+        mylogger.addHandler(s_handler)
 
         if log_file is not None:
-            fh = logging.FileHandler(log_file)
-            fh.setLevel(logging.DEBUG)
-            fh.setFormatter(formatter)
-            mylogger.addHandler(fh)
+            f_handler = logging.FileHandler(log_file)
+            f_handler.setLevel(logging.DEBUG)
+            f_handler.setFormatter(formatter)
+            mylogger.addHandler(f_handler)
 
         _decorate_logger(mylogger)
         return mylogger
@@ -104,5 +104,5 @@ class CoverageLog(object):
 # Setup default logger
 if not os.path.exists(LOG_DIR):
     os.makedirs(LOG_DIR)
-logger = CoverageLog.get_logger(name='Default', log_file=default_log_file)
+logger = CoverageLog.get_logger(name='DefaultCoverage', log_file=default_log_file)
 _decorate_logger(logger)
