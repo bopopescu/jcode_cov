@@ -127,7 +127,7 @@ class CoverageDispatcher(object):
         :return:
         """
 
-        clog.info("Clone source code to local.")
+        clog.info("Clone source code to {}".format(local_src_path))
         mkdir_p(local_src_path)
         src_space = local_src_path + os.sep + self.p_record.git.split("/")[-1].rsplit(".", 1)[0]
 
