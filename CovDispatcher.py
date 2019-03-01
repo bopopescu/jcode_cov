@@ -89,7 +89,7 @@ class CoverageDispatcher(object):
         :param remote_class_path:
         :param local_class_path:
         """
-        clog.info("Extract tested service classes.")
+        clog.info("Extract test service classes.")
         local_coverage_class_path = os.path.join(local_class_path, "coverage_classes")
         local_temp_coverage_class_path = os.path.join(local_class_path, "temp_classes")
         mkdir_p(local_coverage_class_path)

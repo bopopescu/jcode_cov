@@ -65,9 +65,9 @@ def scp_to_remote(host, user, passwd, remote_path, local_path):
     """
     remote_mk_dir_cmd = "sudo mkdir -p {}".format(remote_path)
     remote_cmd("{}@{}".format(user, host), passwd, remote_mk_dir_cmd)
+    clog.info("Copying to remote from {} to {}".format(local_path, remote_path))
     scp_cmd = "scp -rp " + local_path + " " + user + "@" + host + ":" + remote_path
     ssh = pexpect.spawn("/bin/bash", ["-c", scp_cmd], timeout=600)
-    clog.info("【Copying to remote】from {} to {}".format(local_path, remote_path))
     pwd_count = 0
     while 1:
         try:
@@ -102,17 +102,17 @@ def get_from_remote(host, user, passwd, remote_path, local_path):
     :return:
     """
     # This directory does not require super permissions
+    clog.info("Create local directory and set its permission with rwx.")
     cmd = "mkdir -p {} && chmod 777 {}".format(local_path, local_path)
-    clog.info("Create directory and set its permission with rwx.\n{}".format(local_path))
     if run_cmd(cmd) is False:
         run_cmd("mkdir -p {}".format(local_path))
 
     if not os.path.exists(local_path):
-        clog.error("Create {} failed.".format(local_path))
+        clog.error("FAILED - create {}.".format(local_path))
         return -1
 
-    scp_cmd = "scp -rp {}@{}:{} {}".format(user, host, remote_path, local_path)
     clog.info("Copying to local from {} to {}".format(remote_path, local_path))
+    scp_cmd = "scp -rp {}@{}:{} {}".format(user, host, remote_path, local_path)
     ssh = pexpect.spawn("/bin/bash", ["-c", scp_cmd], timeout=600)
     pwd_count = 0
     while 1:
@@ -125,7 +125,7 @@ def get_from_remote(host, user, passwd, remote_path, local_path):
                 ssh.sendline("yes")
             elif index == 1:
                 if pwd_count > 0:
-                    clog.error("Password is wrong")
+                    clog.error("password is wrong")
                     return 1
                 else:
                     ssh.sendline(passwd)
