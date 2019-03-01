@@ -60,7 +60,8 @@ class CoverageDispatcher(object):
         """
         mkdir_p(self.local_output_path)
 
-        local_time = time_now()
+        # local_time = time_now()
+        local_time = datetime.now().strftime("%Y-%m-%d-%H-%M-%S-%f")
 
         exec_name_s = "{}_{}_jacoco.exec".format(self.p_record.plus_name, local_time)
         exec_name_f = os.path.join(self.local_output_path, exec_name_s)
