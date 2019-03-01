@@ -261,10 +261,19 @@ def extract_pack(pack, target_dir):
         clog.error(traceback.format_exception(exc_type, exc_value, exc_tb))
 
 
-def time_now():
+def time_now_dyna():
     """
     Get the local time dynamically
     :return time object
     """
     local_time_now = type("now", (), {"__repr__": lambda _: str(datetime.now().strftime("%Y-%m-%d-%H-%M-%S-%f"))})()
+    return local_time_now
+
+
+def time_now_stat():
+    """
+    Get the local time statically
+    :return time object
+    """
+    local_time_now = datetime.now().strftime("%Y-%m-%d-%H-%M-%S-%f")
     return local_time_now
