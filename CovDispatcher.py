@@ -102,7 +102,11 @@ class CoverageDispatcher(object):
         else:
             service_dir = remote_class_path.split("/")[-1]
         local_service_dir = os.path.join(local_class_path, service_dir)
-        path_list = os.listdir(local_service_dir)
+        try:
+            path_list = os.listdir(local_service_dir)
+        except OSError:
+            clog.error("Please check service deploy directory")
+            return
         for item in path_list:
             if is_archive(item):
                 mkdir_p(local_temp_coverage_class_path)
@@ -377,6 +381,10 @@ class CoverageDispatcher(object):
         """
         clog.info("Put output to remote.")
         list_dir = os.listdir(self.local_output_path)
+        if len(os.listdir(self.local_output_path)) < 1:
+            clog.error("Please check {}".format(self.local_output_path))
+            return
+
         jacoco_flag = False
         class_flag = False
         for item in list_dir:
