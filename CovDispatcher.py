@@ -72,7 +72,9 @@ class CoverageDispatcher(object):
 
         local_class_path = os.path.join(self.local_output_path,
                                         "webroot_{}_{}".format(self.p_record.plus_name, local_time))
-        self.get_remote_class(remote_class_path, local_class_path)
+        if not self.get_remote_class(remote_class_path, local_class_path):
+            # sys.exit(1)
+            raise SystemExit
 
         local_src_path = os.path.join(self.local_output_path, "src_{}_{}".format(self.p_record.plus_name, local_time))
         # comment it out temporarily for qcs auto cov
@@ -105,8 +107,8 @@ class CoverageDispatcher(object):
         try:
             path_list = os.listdir(local_service_dir)
         except OSError:
-            clog.error("Please check service deploy directory")
-            return
+            clog.error("Service deploy directory {} failed.".format(remote_class_path))
+            return False
         for item in path_list:
             if is_archive(item):
                 mkdir_p(local_temp_coverage_class_path)
@@ -118,6 +120,7 @@ class CoverageDispatcher(object):
         # Clean temp service directory
         rmdir_rf(local_service_dir)
         self.coverage_info["class"] = local_class_path
+        return True
 
     def get_git_code(self, local_src_path, old_commit, new_commit, old_branch, jobname, job_url):
         """
