@@ -73,7 +73,6 @@ class CoverageDispatcher(object):
         local_class_path = os.path.join(self.local_output_path,
                                         "webroot_{}_{}".format(self.p_record.plus_name, local_time))
         if not self.get_remote_class(remote_class_path, local_class_path):
-            # sys.exit(1)
             raise SystemExit
 
         local_src_path = os.path.join(self.local_output_path, "src_{}_{}".format(self.p_record.plus_name, local_time))
