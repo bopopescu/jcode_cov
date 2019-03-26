@@ -7,6 +7,7 @@ import sys
 import stat
 import errno
 import shutil
+import tarfile
 import zipfile
 import traceback
 import subprocess
@@ -202,15 +203,14 @@ def rmdir_rf(path):
     shutil.rmtree(path, onerror=handle_error)
 
 
-def is_archive(filename):
+def is_archive(file_path):
     """
-    Check file suffixes
-    :param filename:
+    Check file extension
+    :param file_path:
     :return:
     """
-    ext = filename[-4:]
-
-    if ext in [".war", ".jar"]:
+    fn, ext = os.path.splitext(file_path)
+    if ext in [".zip", ".jar", ".war", ".tar", ".gz", ".tgz"]:
         return True
     return False
 
@@ -243,7 +243,26 @@ def selective_copy(source, target, file_extension=None):
             clog.error("IO Error: {}".format(e.strerror))
 
 
-def extract_pack(pack, target_dir):
+def extract_pack(pack_name, target_dir):
+    """
+    Extract the compressed packages into the specified directory
+    :param pack_name: filename
+    :param target_dir: extract directory
+    """
+    fn, ext = os.path.splitext(pack_name)
+
+    if ext in [".zip", ".jar", ".war"]:
+        with zipfile.ZipFile(pack_name, "r") as zf:
+            zf.extractall(target_dir)
+    elif ext == ".tar":
+        with tarfile.TarFile(pack_name, "r") as tf:
+            tf.extractall(target_dir)
+    elif ext == ".gz" or ext == ".tgz":
+        with tarfile.open(pack_name, "r:gz") as tf:
+            tf.extractall(target_dir)
+
+
+def _extract_pack(pack, target_dir):
     """
     Extract the compressed packages into the specified directory
     :param pack:
