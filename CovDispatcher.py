@@ -213,13 +213,13 @@ class CoverageDispatcher(object):
         :param output_path:
         :param src_space:
         """
-        cmd = "cp -r {} {}".format(os.path.join(output_path, "webroot_*"), output_path + "/diff2html")
+        cmd = "cp -rp {} {}".format(os.path.join(output_path, "webroot_*"), output_path + "/diff2html")
         run_cmd(cmd)
-        cmd = "cp {} {}".format(os.path.join(output_path, "*.exec"), output_path + "/diff2html")
+        cmd = "cp -p {} {}".format(os.path.join(output_path, "*.exec"), output_path + "/diff2html")
         run_cmd(cmd)
-        cmd = "cp {} {}".format(os.path.join(src_space, "diff.txt"), output_path + "/diff2html")
+        cmd = "cp -p {} {}".format(os.path.join(src_space, "diff.txt"), output_path + "/diff2html")
         run_cmd(cmd)
-        cmd = "cp {} {}".format(os.path.join(src_space, "diffcov.txt"), output_path + "/diff2html")
+        cmd = "cp -p {} {}".format(os.path.join(src_space, "diffcov.txt"), output_path + "/diff2html")
         run_cmd(cmd)
 
     def get_new_commit(self, log_path):

@@ -254,10 +254,10 @@ def extract_pack(pack_name, target_dir):
     if ext in [".zip", ".jar", ".war"]:
         with zipfile.ZipFile(pack_name, "r") as zf:
             zf.extractall(target_dir)
-    elif ext == ".tar":
+    elif ext in ".tar":
         with tarfile.TarFile(pack_name, "r") as tf:
             tf.extractall(target_dir)
-    elif ext == ".gz" or ext == ".tgz":
+    elif ext in [".gz", ".tgz"]:
         with tarfile.open(pack_name, "r:gz") as tf:
             tf.extractall(target_dir)
 
