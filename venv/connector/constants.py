@@ -1,25 +1,30 @@
-# MySQL Connector/Python - MySQL driver written in Python.
-# Copyright (c) 2009, 2014, Oracle and/or its affiliates. All rights reserved.
-
-# MySQL Connector/Python is licensed under the terms of the GPLv2
-# <http://www.gnu.org/licenses/old-licenses/gpl-2.0.html>, like most
-# MySQL Connectors. There are special exceptions to the terms and
-# conditions of the GPLv2 as it is applied to this software, see the
-# FOSS License Exception
-# <http://www.mysql.com/about/legal/licensing/foss-exception.html>.
+# Copyright (c) 2009, 2019, Oracle and/or its affiliates. All rights reserved.
 #
 # This program is free software; you can redistribute it and/or modify
-# it under the terms of the GNU General Public License as published by
-# the Free Software Foundation.
+# it under the terms of the GNU General Public License, version 2.0, as
+# published by the Free Software Foundation.
 #
-# This program is distributed in the hope that it will be useful,
-# but WITHOUT ANY WARRANTY; without even the implied warranty of
-# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-# GNU General Public License for more details.
+# This program is also distributed with certain software (including
+# but not limited to OpenSSL) that is licensed under separate terms,
+# as designated in a particular file or component or in included license
+# documentation.  The authors of MySQL hereby grant you an
+# additional permission to link the program and your derivative works
+# with the separately licensed software that they have included with
+# MySQL.
+#
+# Without limiting anything contained in the foregoing, this file,
+# which is part of MySQL Connector/Python, is also subject to the
+# Universal FOSS Exception, version 1.0, a copy of which can be found at
+# http://oss.oracle.com/licenses/universal-foss-exception.
+#
+# This program is distributed in the hope that it will be useful, but
+# WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+# See the GNU General Public License, version 2.0, for more details.
 #
 # You should have received a copy of the GNU General Public License
-# along with this program; if not, write to the Free Software
-# Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA
+# along with this program; if not, write to the Free Software Foundation, Inc.,
+# 51 Franklin St, Fifth Floor, Boston, MA 02110-1301  USA
 
 """Various MySQL constants and character sets
 """
@@ -39,7 +44,7 @@ DEFAULT_CONFIGURATION = {
     'port': 3306,
     'unix_socket': None,
     'use_unicode': True,
-    'charset': 'utf8',
+    'charset': 'utf8mb4',
     'collation': None,
     'converter_class': None,
     'autocommit': False,
@@ -56,22 +61,21 @@ DEFAULT_CONFIGURATION = {
     'ssl_cert': None,
     'ssl_key': None,
     'ssl_verify_cert': False,
+    'ssl_verify_identity': False,
+    'ssl_cipher': None,
+    'ssl_disabled': False,
+    'ssl_version': None,
     'passwd': None,
     'db': None,
     'connect_timeout': None,
     'dsn': None,
     'force_ipv6': False,
     'auth_plugin': None,
-    'allow_local_infile': True,
+    'allow_local_infile': False,
     'consume_results': False,
 }
 
 CNX_POOL_ARGS = ('pool_name', 'pool_size', 'pool_reset_session')
-CNX_FABRIC_ARGS = ['fabric_host', 'fabric_username', 'fabric_password',
-                   'fabric_port', 'fabric_connect_attempts',
-                   'fabric_connect_delay', 'fabric_report_errors',
-                   'fabric_ssl_ca', 'fabric_ssl_key', 'fabric_ssl_cert',
-                   'fabric_user']
 
 def flag_is_set(flag, flags):
     """Checks if the flag is set
@@ -101,10 +105,10 @@ class _Constants(object):
             return None
 
     @classmethod
-    def get_info(cls, num):
+    def get_info(cls, setid):
         """Get information about given constant"""
         for name, info in cls.desc.items():
-            if info[0] == num:
+            if info[0] == setid:
                 return name
         return None
 
@@ -157,6 +161,7 @@ class FieldType(_Constants):
     NEWDATE = 0x0e
     VARCHAR = 0x0f
     BIT = 0x10
+    JSON = 0xf5
     NEWDECIMAL = 0xf6
     ENUM = 0xf7
     SET = 0xf8
@@ -186,6 +191,7 @@ class FieldType(_Constants):
         'NEWDATE': (0x0e, 'NEWDATE'),
         'VARCHAR': (0x0f, 'VARCHAR'),
         'BIT': (0x10, 'BIT'),
+        'JSON': (0xf5, 'JSON'),
         'NEWDECIMAL': (0xf6, 'NEWDECIMAL'),
         'ENUM': (0xf7, 'ENUM'),
         'SET': (0xf8, 'SET'),
@@ -397,6 +403,8 @@ class ClientFlag(_Flags):
     CONNECT_ARGS = 1 << 20
     PLUGIN_AUTH_LENENC_CLIENT_DATA = 1 << 21
     CAN_HANDLE_EXPIRED_PASSWORDS = 1 << 22
+    SESION_TRACK = 1 << 23
+    DEPRECATE_EOF = 1 << 24
     SSL_VERIFY_SERVER_CERT = 1 << 30
     REMEMBER_OPTIONS = 1 << 31
 
@@ -419,6 +427,14 @@ class ClientFlag(_Flags):
         'SECURE_CONNECTION': (1 << 15, 'New 4.1 authentication'),
         'MULTI_STATEMENTS': (1 << 16, 'Enable/disable multi-stmt support'),
         'MULTI_RESULTS': (1 << 17, 'Enable/disable multi-results'),
+        'PS_MULTI_RESULTS': (1 << 18, 'Multi-results in PS-protocol'),
+        'PLUGIN_AUTH': (1 << 19, 'Client supports plugin authentication'),
+        'CONNECT_ARGS': (1 << 20, 'Client supports connection attributes'),
+        'PLUGIN_AUTH_LENENC_CLIENT_DATA': (1 << 21,
+                                           'Enable authentication response packet to be larger than 255 bytes'),
+        'CAN_HANDLE_EXPIRED_PASSWORDS': (1 << 22, "Don't close the connection for a connection with expired password"),
+        'SESION_TRACK': (1 << 23, 'Capable of handling server state change information'),
+        'DEPRECATE_EOF': (1 << 24, 'Client no longer needs EOF packet'),
         'SSL_VERIFY_SERVER_CERT': (1 << 30, ''),
         'REMEMBER_OPTIONS': (1 << 31, ''),
     }
@@ -432,7 +448,6 @@ class ClientFlag(_Flags):
         SECURE_CONNECTION,
         MULTI_STATEMENTS,
         MULTI_RESULTS,
-        LOCAL_FILES,
     ]
 
     @classmethod
@@ -461,6 +476,11 @@ class ServerFlag(_Flags):
     STATUS_LAST_ROW_SENT = 1 << 7
     STATUS_DB_DROPPED = 1 << 8
     STATUS_NO_BACKSLASH_ESCAPES = 1 << 9
+    SERVER_STATUS_METADATA_CHANGED = 1 << 10
+    SERVER_QUERY_WAS_SLOW = 1 << 11
+    SERVER_PS_OUT_PARAMS = 1 << 12
+    SERVER_STATUS_IN_TRANS_READONLY = 1 << 13
+    SERVER_SESSION_STATE_CHANGED = 1 << 14
 
     desc = {
         'SERVER_STATUS_IN_TRANS': (1 << 0,
@@ -472,10 +492,31 @@ class ServerFlag(_Flags):
                                        'next query exists'),
         'SERVER_QUERY_NO_GOOD_INDEX_USED': (1 << 4, ''),
         'SERVER_QUERY_NO_INDEX_USED': (1 << 5, ''),
-        'SERVER_STATUS_CURSOR_EXISTS': (1 << 6, ''),
-        'SERVER_STATUS_LAST_ROW_SENT': (1 << 7, ''),
+        'SERVER_STATUS_CURSOR_EXISTS': (1 << 6,
+                                        'Set when server opened a read-only '
+                                        'non-scrollable cursor for a query.'),
+        'SERVER_STATUS_LAST_ROW_SENT': (1 << 7,
+                                        'Set when a read-only cursor is '
+                                        'exhausted'),
         'SERVER_STATUS_DB_DROPPED': (1 << 8, 'A database was dropped'),
         'SERVER_STATUS_NO_BACKSLASH_ESCAPES': (1 << 9, ''),
+        'SERVER_STATUS_METADATA_CHANGED': (1024,
+                                           'Set if after a prepared statement '
+                                           'reprepare we discovered that the '
+                                           'new statement returns a different '
+                                           'number of result set columns.'),
+        'SERVER_QUERY_WAS_SLOW': (2048, ''),
+        'SERVER_PS_OUT_PARAMS': (4096,
+                                 'To mark ResultSet containing output '
+                                 'parameter values.'),
+        'SERVER_STATUS_IN_TRANS_READONLY': (8192,
+                                            'Set if multi-statement '
+                                            'transaction is a read-only '
+                                            'transaction.'),
+        'SERVER_SESSION_STATE_CHANGED': (1 << 14,
+                                         'Session state has changed on the '
+                                         'server because of the execution of '
+                                         'the last statement'),
     }
 
 
@@ -581,7 +622,7 @@ class CharacterSet(_Constants):
                 "Character set '{0}' unsupported".format(setid))
 
     @classmethod
-    def get_desc(cls, setid):
+    def get_desc(cls, name):
         """Retrieves character set information as string using an ID
 
         Retrieves character set and collation information based on the
@@ -590,7 +631,7 @@ class CharacterSet(_Constants):
         Returns a tuple.
         """
         try:
-            return "%s/%s" % cls.get_info(setid)
+            return "%s/%s" % cls.get_info(name)
         except:
             raise
 
@@ -659,8 +700,8 @@ class CharacterSet(_Constants):
                     continue
                 if info[0] == charset and info[1] == collation:
                     return (cid, info[0], info[1])
-            raise ProgrammingError("Character set '{0}' unknown.".format(
-                charset))
+            _ = cls.get_default_collation(charset)
+            raise ProgrammingError("Collation '{0}' unknown.".format(collation))
 
     @classmethod
     def get_supported(cls):
@@ -675,7 +716,7 @@ class CharacterSet(_Constants):
         return tuple(res)
 
 
-class SQLMode(_Constants):  # pylint: disable=R0921
+class SQLMode(_Constants):
     """MySQL SQL Modes
 
     The numeric values of SQL Modes are not interesting, only the names
@@ -723,7 +764,7 @@ class SQLMode(_Constants):  # pylint: disable=R0921
         raise NotImplementedError
 
     @classmethod
-    def get_info(cls, number):
+    def get_info(cls, setid):
         raise NotImplementedError
 
     @classmethod

@@ -1,40 +1,45 @@
-# MySQL Connector/Python - MySQL driver written in Python.
-# Copyright (c) 2014, 2015, Oracle and/or its affiliates. All rights reserved.
-
-# MySQL Connector/Python is licensed under the terms of the GPLv2
-# <http://www.gnu.org/licenses/old-licenses/gpl-2.0.html>, like most
-# MySQL Connectors. There are special exceptions to the terms and
-# conditions of the GPLv2 as it is applied to this software, see the
-# FOSS License Exception
-# <http://www.mysql.com/about/legal/licensing/foss-exception.html>.
+# Copyright (c) 2014, 2019, Oracle and/or its affiliates. All rights reserved.
 #
 # This program is free software; you can redistribute it and/or modify
-# it under the terms of the GNU General Public License as published by
-# the Free Software Foundation.
+# it under the terms of the GNU General Public License, version 2.0, as
+# published by the Free Software Foundation.
 #
-# This program is distributed in the hope that it will be useful,
-# but WITHOUT ANY WARRANTY; without even the implied warranty of
-# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-# GNU General Public License for more details.
+# This program is also distributed with certain software (including
+# but not limited to OpenSSL) that is licensed under separate terms,
+# as designated in a particular file or component or in included license
+# documentation.  The authors of MySQL hereby grant you an
+# additional permission to link the program and your derivative works
+# with the separately licensed software that they have included with
+# MySQL.
+#
+# Without limiting anything contained in the foregoing, this file,
+# which is part of MySQL Connector/Python, is also subject to the
+# Universal FOSS Exception, version 1.0, a copy of which can be found at
+# http://oss.oracle.com/licenses/universal-foss-exception.
+#
+# This program is distributed in the hope that it will be useful, but
+# WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+# See the GNU General Public License, version 2.0, for more details.
 #
 # You should have received a copy of the GNU General Public License
-# along with this program; if not, write to the Free Software
-# Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA
+# along with this program; if not, write to the Free Software Foundation, Inc.,
+# 51 Franklin St, Fifth Floor, Boston, MA 02110-1301  USA
 
 """Module gathering all abstract base classes"""
-
-# Issue with pylint and NotImplementedError
-# pylint: disable=R0921
 
 from abc import ABCMeta, abstractmethod, abstractproperty
 import re
 import time
+import weakref
 
 from .catch23 import make_abc, BYTE_TYPES
 from .conversion import MySQLConverterBase
 from .constants import ClientFlag, CharacterSet, DEFAULT_CONFIGURATION
 from .optionfiles import MySQLOptionsParser
 from . import errors
+
+NAMED_TUPLE_CACHE = weakref.WeakValueDictionary()
 
 @make_abc(ABCMeta)
 class MySQLConnectionAbstract(object):
@@ -44,7 +49,7 @@ class MySQLConnectionAbstract(object):
     def __init__(self, **kwargs):
         """Initialize"""
         self._client_flags = ClientFlag.get_default()
-        self._charset_id = 33
+        self._charset_id = 45
         self._sql_mode = None
         self._time_zone = None
         self._autocommit = False
@@ -60,12 +65,13 @@ class MySQLConnectionAbstract(object):
         self._client_host = ''
         self._client_port = 0
         self._ssl = {}
+        self._ssl_disabled = DEFAULT_CONFIGURATION["ssl_disabled"]
         self._force_ipv6 = False
 
         self._use_unicode = True
         self._get_warnings = False
         self._raise_on_warnings = False
-        self._connection_timeout = None
+        self._connection_timeout = DEFAULT_CONFIGURATION["connect_timeout"]
         self._buffered = False
         self._unread_result = False
         self._have_next_result = False
@@ -130,7 +136,7 @@ class MySQLConnectionAbstract(object):
                                     config_options[option][1] <= value[1]):
                                 config_options[option] = value
                         except KeyError:
-                            if group is 'connector_python':
+                            if group == 'connector_python':
                                 raise AttributeError("Unsupported argument "
                                                      "'{0}'".format(option))
                 except KeyError:
@@ -220,11 +226,12 @@ class MySQLConnectionAbstract(object):
         except KeyError:
             pass  # Missing compress argument is OK
 
-        try:
-            if not config['allow_local_infile']:
-                self.set_client_flags([-ClientFlag.LOCAL_FILES])
-        except KeyError:
-            pass  # Missing allow_local_infile argument is OK
+        allow_local_infile = config.get(
+            'allow_local_infile', DEFAULT_CONFIGURATION['allow_local_infile'])
+        if allow_local_infile:
+            self.set_client_flags([ClientFlag.LOCAL_FILES])
+        else:
+            self.set_client_flags([-ClientFlag.LOCAL_FILES])
 
         try:
             if not config['consume_results']:
@@ -233,6 +240,13 @@ class MySQLConnectionAbstract(object):
                 self._consume_results = True
         except KeyError:
             self._consume_results = False
+
+        # Configure auth_plugin
+        try:
+            self._auth_plugin = config['auth_plugin']
+            del config['auth_plugin']
+        except KeyError:
+            self._auth_plugin = ''
 
         # Configure character set and collation
         if 'charset' in config or 'collation' in config:
@@ -287,6 +301,10 @@ class MySQLConnectionAbstract(object):
                 password = self._password
             self.set_login(user, password)
 
+        # Configure host information
+        if 'host' in config and config['host']:
+            self._host = config['host']
+
         # Check network locations
         try:
             self._port = int(config['port'])
@@ -296,6 +314,9 @@ class MySQLConnectionAbstract(object):
         except ValueError:
             raise errors.InterfaceError(
                 "TCP/IP port number should be an integer")
+
+        if "ssl_disabled" in config:
+            self._ssl_disabled = config.pop("ssl_disabled")
 
         # Other configuration
         set_ssl_flag = False
@@ -319,6 +340,9 @@ class MySQLConnectionAbstract(object):
             if 'verify_cert' not in self._ssl:
                 self._ssl['verify_cert'] = \
                     DEFAULT_CONFIGURATION['ssl_verify_cert']
+            if 'verify_identity' not in self._ssl:
+                self._ssl['verify_identity'] = \
+                    DEFAULT_CONFIGURATION['ssl_verify_identity']
             # Make sure both ssl_key/ssl_cert are set, or neither (XOR)
             if 'ca' not in self._ssl or self._ssl['ca'] is None:
                 raise AttributeError(
@@ -337,7 +361,6 @@ class MySQLConnectionAbstract(object):
                     "ssl_key and ssl_cert need to be both "
                     "set, or neither."
                 )
-            self.set_client_flags([ClientFlag.SSL])
 
     def _check_server_version(self, server_version):
         """Check the MySQL version
@@ -361,12 +384,7 @@ class MySQLConnectionAbstract(object):
             raise errors.InterfaceError("Failed parsing MySQL version")
 
         version = tuple([int(v) for v in match.groups()[0:3]])
-        if 'fabric' in match.group(4).lower():
-            if version < (1, 5):
-                raise errors.InterfaceError(
-                    "MySQL Fabric '{0}' is not supported".format(
-                        server_version))
-        elif version < (4, 1):
+        if version < (4, 1):
             raise errors.InterfaceError(
                 "MySQL Version '{0}' is not supported.".format(server_version))
 
@@ -615,8 +633,7 @@ class MySQLConnectionAbstract(object):
         encoding = CharacterSet.get_info(self._charset_id)[0]
         if encoding in ('utf8mb4', 'binary'):
             return 'utf8'
-        else:
-            return encoding
+        return encoding
 
     def set_charset_collation(self, charset=None, collation=None):
         """Sets the character set and collation for the current connection
@@ -637,7 +654,6 @@ class MySQLConnectionAbstract(object):
         """
         if charset:
             if isinstance(charset, int):
-                self._charset_id = charset
                 (self._charset_id, charset_name, collation_name) = \
                     CharacterSet.get_charset_info(charset)
             elif isinstance(charset, str):
@@ -712,7 +728,7 @@ class MySQLConnectionAbstract(object):
         arguments are given, it will use the already configured or default
         values.
         """
-        if len(kwargs) > 0:
+        if kwargs:
             self.config(**kwargs)
 
         self.disconnect()
@@ -885,7 +901,7 @@ class MySQLConnectionAbstract(object):
                             "of conversion.MySQLConverterBase.")
 
     @abstractmethod
-    def get_rows(self, count=None, binary=False, columns=None):
+    def get_rows(self, count=None, binary=False, columns=None, raw=None):
         """Get all rows returned by the MySQL server"""
         pass
 
@@ -943,7 +959,7 @@ class MySQLConnectionAbstract(object):
         raise NotImplementedError
 
     def cmd_change_user(self, username='', password='', database='',
-                        charset=33):
+                        charset=45):
         """Change the current logged in user"""
         raise NotImplementedError
 
@@ -1040,7 +1056,7 @@ class MySQLCursorAbstract(object):
         pass
 
     @abstractmethod
-    def executemany(self, operation, seqparams):
+    def executemany(self, operation, seq_params):
         """Execute the given operation multiple times
 
         The executemany() method will execute the operation iterating

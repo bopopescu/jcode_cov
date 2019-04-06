@@ -12,12 +12,13 @@ import argparse
 current_path = os.path.abspath(os.path.dirname(__file__))
 root_path = os.path.abspath(os.path.join(current_path, ".."))
 sys.path.insert(0, root_path)
+sys.path.insert(0, root_path + "/venv")
 
 from qcs_env_coverage.CovUtils import *
-from qcs_env_coverage.CovLogger import CoverageLog
-from qcs_env_coverage.CovPlusInfo import PlusRecord
 from qcs_env_coverage.venv import requests
 from qcs_env_coverage.venv import xmltodict
+from qcs_env_coverage.CovLogger import CoverageLog
+from qcs_env_coverage.CovPlusInfo import PlusRecord
 
 clog = CoverageLog.get_logger(os.path.basename(__file__))
 

@@ -2,25 +2,17 @@
 # -*- coding: utf-8 -*-
 
 """
-certs.py
-~~~~~~~~
+requests.certs
+~~~~~~~~~~~~~~
 
-This module returns the preferred default CA certificate bundle.
+This module returns the preferred default CA certificate bundle. There is
+only one — the one from the certifi package.
 
 If you are packaging Requests, e.g., for a Linux distribution or a managed
 environment, you can change the definition of where() to return a separately
 packaged CA bundle.
-
-We return "/etc/pki/tls/certs/ca-bundle.crt" provided by the ca-certificates
-package.
 """
-
-try:
-    from certifi import where
-except ImportError:
-    def where():
-        """ Don't use the certs bundled with requests, use ca-certificates. """
-        return "/etc/pki/tls/certs/ca-bundle.crt"
+from certifi import where
 
 if __name__ == '__main__':
     print(where())

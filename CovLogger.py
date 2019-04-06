@@ -3,9 +3,9 @@
 #
 
 import os
+import time
 import types
 import logging
-import time
 from datetime import datetime
 from qcs_env_coverage.venv import colorlog
 

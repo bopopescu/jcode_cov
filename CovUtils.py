@@ -13,9 +13,8 @@ import traceback
 import subprocess
 from zipfile import ZipFile
 from datetime import datetime
-
-from qcs_env_coverage.CovLogger import CoverageLog
 from qcs_env_coverage.venv import pexpect
+from qcs_env_coverage.CovLogger import CoverageLog
 
 clog = CoverageLog.get_logger(os.path.basename(__file__))
 

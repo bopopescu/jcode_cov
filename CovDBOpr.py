@@ -3,16 +3,11 @@
 #
 
 import os
-import sys
 from errno import errorcode
+from qcs_env_coverage.venv import connector
 from qcs_env_coverage.CovLogger import CoverageLog
 
 clog = CoverageLog.get_logger(os.path.basename(__file__))
-current_path = os.path.abspath(os.path.dirname(__file__))
-root_path = os.path.abspath(os.path.join(current_path, ".."))
-sys.path.insert(0, root_path)
-
-from qcs_env_coverage.venv import connector
 
 
 class CoverageDataBaseOperator(object):

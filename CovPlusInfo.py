@@ -3,18 +3,12 @@
 #
 
 import os
-import sys
 from time import sleep
+from bs4 import BeautifulSoup
+from qcs_env_coverage.venv import requests
 from qcs_env_coverage.CovLogger import CoverageLog
 
 clog = CoverageLog.get_logger(os.path.basename(__file__))
-current_path = os.path.abspath(os.path.dirname(__file__))
-root_path = os.path.abspath(os.path.join(current_path, ".."))
-sys.path.insert(0, root_path)
-sys.path.insert(0, root_path + "/venv")
-
-from qcs_env_coverage.venv import requests
-from qcs_env_coverage.venv.bs4 import BeautifulSoup
 
 
 def get_login_data():
@@ -208,8 +202,8 @@ class PlusRecord(object):
 
 if __name__ == "__main__":
     template_n = "test"
-    plus_n = "meituan.meishi.crm.ms"
+    plus_n = "meituan.qcs.service.messagecenter"
 
-    p_record = PlusRecord(plus_n, template_n, "10.5.245.163", "master")
+    p_record = PlusRecord(plus_n, template_n, "10.21.250.248", "master")
     if p_record.git_url is None:
         p_record.output_init_info()

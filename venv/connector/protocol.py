@@ -1,25 +1,30 @@
-# MySQL Connector/Python - MySQL driver written in Python.
-# Copyright (c) 2009, 2015, Oracle and/or its affiliates. All rights reserved.
-
-# MySQL Connector/Python is licensed under the terms of the GPLv2
-# <http://www.gnu.org/licenses/old-licenses/gpl-2.0.html>, like most
-# MySQL Connectors. There are special exceptions to the terms and
-# conditions of the GPLv2 as it is applied to this software, see the
-# FOSS License Exception
-# <http://www.mysql.com/about/legal/licensing/foss-exception.html>.
+# Copyright (c) 2009, 2018, Oracle and/or its affiliates. All rights reserved.
 #
 # This program is free software; you can redistribute it and/or modify
-# it under the terms of the GNU General Public License as published by
-# the Free Software Foundation.
+# it under the terms of the GNU General Public License, version 2.0, as
+# published by the Free Software Foundation.
 #
-# This program is distributed in the hope that it will be useful,
-# but WITHOUT ANY WARRANTY; without even the implied warranty of
-# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-# GNU General Public License for more details.
+# This program is also distributed with certain software (including
+# but not limited to OpenSSL) that is licensed under separate terms,
+# as designated in a particular file or component or in included license
+# documentation.  The authors of MySQL hereby grant you an
+# additional permission to link the program and your derivative works
+# with the separately licensed software that they have included with
+# MySQL.
+#
+# Without limiting anything contained in the foregoing, this file,
+# which is part of MySQL Connector/Python, is also subject to the
+# Universal FOSS Exception, version 1.0, a copy of which can be found at
+# http://oss.oracle.com/licenses/universal-foss-exception.
+#
+# This program is distributed in the hope that it will be useful, but
+# WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+# See the GNU General Public License, version 2.0, for more details.
 #
 # You should have received a copy of the GNU General Public License
-# along with this program; if not, write to the Free Software
-# Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA
+# along with this program; if not, write to the Free Software Foundation, Inc.,
+# 51 Franklin St, Fifth Floor, Boston, MA 02110-1301  USA
 
 """Implements the MySQL Client/Server protocol
 """
@@ -29,11 +34,13 @@ import datetime
 from decimal import Decimal
 
 from .constants import (
-    FieldFlag, ServerCmd, FieldType, ClientFlag, MAX_MYSQL_TABLE_COLUMNS)
+    FieldFlag, ServerCmd, FieldType, ClientFlag)
 from . import errors, utils
 from .authentication import get_auth_plugin
 from .catch23 import PY2, struct_unpack
-from .errors import get_exception
+from .errors import DatabaseError, get_exception
+
+PROTOCOL_VERSION = 10
 
 
 class MySQLProtocol(object):
@@ -61,7 +68,7 @@ class MySQLProtocol(object):
                 ssl_enabled=ssl_enabled)
             plugin_auth_response = auth.auth_response()
         except (TypeError, errors.InterfaceError) as exc:
-            raise errors.ProgrammingError(
+            raise errors.InterfaceError(
                 "Failed authentication: {0}".format(str(exc)))
 
         if client_flags & ClientFlag.SECURE_CONNECTION:
@@ -72,7 +79,7 @@ class MySQLProtocol(object):
         return auth_response
 
     def make_auth(self, handshake, username=None, password=None, database=None,
-                  charset=33, client_flags=0,
+                  charset=45, client_flags=0,
                   max_allowed_packet=1073741824, ssl_enabled=False,
                   auth_plugin=None):
         """Make a MySQL Authentication packet"""
@@ -108,7 +115,7 @@ class MySQLProtocol(object):
 
         return packet
 
-    def make_auth_ssl(self, charset=33, client_flags=0,
+    def make_auth_ssl(self, charset=45, client_flags=0,
                       max_allowed_packet=1073741824):
         """Make a SSL authentication packet"""
         return utils.int4store(client_flags) + \
@@ -123,8 +130,12 @@ class MySQLProtocol(object):
             data += argument
         return data
 
+    def make_stmt_fetch(self, statement_id, rows=1):
+        """Make a MySQL packet with Fetch Statement command"""
+        return utils.int4store(statement_id) + utils.int4store(rows)
+
     def make_change_user(self, handshake, username=None, password=None,
-                         database=None, charset=33, client_flags=0,
+                         database=None, charset=45, client_flags=0,
                          ssl_enabled=False, auth_plugin=None):
         """Make a MySQL packet with the Change User command"""
 
@@ -163,6 +174,10 @@ class MySQLProtocol(object):
         """Parse a MySQL Handshake-packet"""
         res = {}
         res['protocol'] = struct_unpack('<xxxxB', packet[0:5])[0]
+        if res["protocol"] != PROTOCOL_VERSION:
+            raise DatabaseError("Protocol mismatch; server version = {}, "
+                                "client version = {}".format(res["protocol"],
+                                                             PROTOCOL_VERSION))
         (packet, res['server_version_original']) = utils.read_string(
             packet[5:], end=b'\x00')
 
@@ -206,14 +221,14 @@ class MySQLProtocol(object):
     def parse_ok(self, packet):
         """Parse a MySQL OK-packet"""
         if not packet[4] == 0:
-            raise errors.InterfaceError("Failed parsing OK packet.")
+            raise errors.InterfaceError("Failed parsing OK packet (invalid).")
 
         ok_packet = {}
         try:
             ok_packet['field_count'] = struct_unpack('<xxxxB', packet[0:5])[0]
             (packet, ok_packet['affected_rows']) = utils.read_lc_int(packet[5:])
             (packet, ok_packet['insert_id']) = utils.read_lc_int(packet)
-            (ok_packet['server_status'],
+            (ok_packet['status_flag'],
              ok_packet['warning_count']) = struct_unpack('<HH', packet[0:4])
             packet = packet[4:]
             if packet:
@@ -227,8 +242,6 @@ class MySQLProtocol(object):
         """Parse a MySQL packet with the number of columns in result set"""
         try:
             count = utils.read_lc_int(packet[4:])[1]
-            if count > MAX_MYSQL_TABLE_COLUMNS:
-                return None
             return count
         except (struct.error, ValueError):
             raise errors.InterfaceError("Failed parsing column count")
@@ -261,6 +274,10 @@ class MySQLProtocol(object):
 
     def parse_eof(self, packet):
         """Parse a MySQL EOF-packet"""
+        if packet[4] == 0:
+            # EOF packet deprecation
+            return self.parse_ok(packet)
+
         err_msg = "Failed parsing EOF packet."
         res = {}
         try:
@@ -302,7 +319,7 @@ class MySQLProtocol(object):
                         "{0} ({1}:{2}).".format(errmsg, lbl, val))
         return res
 
-    def read_text_result(self, sock, count=1):
+    def read_text_result(self, sock, version, count=1):
         """Read MySQL text result
 
         Reads all or given number of rows from the socket.
@@ -315,9 +332,7 @@ class MySQLProtocol(object):
         rowdata = None
         i = 0
         while True:
-            if eof is not None:
-                break
-            if i == count:
+            if eof or i == count:
                 break
             packet = sock.recv()
             if packet.startswith(b'\xff\xff\xff'):
@@ -328,7 +343,7 @@ class MySQLProtocol(object):
                     packet = sock.recv()
                 datas.append(packet[4:])
                 rowdata = utils.read_lc_string_list(bytearray(b'').join(datas))
-            elif packet[4] == 254:
+            elif packet[4] == 254 and packet[0] < 7:
                 eof = self.parse_eof(packet)
                 rowdata = None
             else:
@@ -414,7 +429,7 @@ class MySQLProtocol(object):
 
         return (packet[length + 1:], tmp)
 
-    def _parse_binary_values(self, fields, packet):
+    def _parse_binary_values(self, fields, packet, charset='utf-8'):
         """Parse values from a binary result packet"""
         null_bitmap_length = (len(fields) + 7 + 2) // 8
         null_bitmap = [int(i) for i in packet[0:null_bitmap_length]]
@@ -442,11 +457,11 @@ class MySQLProtocol(object):
                 values.append(value)
             else:
                 (packet, value) = utils.read_lc_string(packet)
-                values.append(value)
+                values.append(value.decode(charset))
 
         return tuple(values)
 
-    def read_binary_result(self, sock, columns, count=1):
+    def read_binary_result(self, sock, columns, count=1, charset='utf-8'):
         """Read MySQL binary protocol result
 
         Reads all or given number of binary resultset rows from the socket.
@@ -466,7 +481,7 @@ class MySQLProtocol(object):
                 values = None
             elif packet[4] == 0:
                 eof = None
-                values = self._parse_binary_values(columns, packet[5:])
+                values = self._parse_binary_values(columns, packet[5:], charset)
             if eof is None and values is not None:
                 rows.append(values)
             elif eof is None and values is None:
@@ -622,6 +637,8 @@ class MySQLProtocol(object):
         values = []
         types = []
         packed = b''
+        if charset == 'utf8mb4':
+            charset = 'utf8'
         if long_data_used is None:
             long_data_used = {}
         if parameters and data:
@@ -711,7 +728,7 @@ class MySQLProtocol(object):
                 "Failed parsing AuthSwitchRequest packet")
 
         (packet, plugin_name) = utils.read_string(packet[5:], end=b'\x00')
-        if packet[-1] == 0:
+        if packet and packet[-1] == 0:
             packet = packet[:-1]
 
         return plugin_name.decode('utf8'), packet
