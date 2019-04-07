@@ -3,16 +3,14 @@
 #
 
 import os
-import time
 import types
 import logging
-from datetime import datetime
+import logging.handlers
 from qcs_env_coverage.venv import colorlog
 
 PROJECT_ROOT = os.path.abspath(os.path.join(os.path.dirname(__file__)))
 LOG_DIR = os.path.join(PROJECT_ROOT, 'out')
-LOG_TIME = datetime.fromtimestamp(time.time()).strftime('%Y-%m-%d-%H-%M-%S-%f')
-default_log_file = os.path.join(LOG_DIR, '{}.log'.format(LOG_TIME))
+default_log_file = os.path.join(LOG_DIR, 'qcs_env_coverage.log')
 
 
 def h1(self, title):
@@ -71,7 +69,7 @@ class CoverageLog(object):
         mylogger = colorlog.getLogger(name)
         mylogger.setLevel(logging.DEBUG)
         formatter = logging.Formatter('[%(asctime)s][%(levelname)s] - %(message)s')
-        color_formatter = formatter = colorlog.ColoredFormatter(
+        color_formatter = colorlog.ColoredFormatter(
             "%(log_color)s[%(asctime)s][%(levelname)s] - %(message)s",
             datefmt=None,
             reset=True,
@@ -92,7 +90,11 @@ class CoverageLog(object):
         mylogger.addHandler(s_handler)
 
         if log_file is not None:
-            f_handler = logging.FileHandler(log_file)
+            f_handler = logging.handlers.RotatingFileHandler(
+                log_file,
+                maxBytes=16732,
+                backupCount=5,
+            )
             f_handler.setLevel(logging.DEBUG)
             f_handler.setFormatter(formatter)
             mylogger.addHandler(f_handler)

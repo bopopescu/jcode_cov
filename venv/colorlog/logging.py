@@ -26,11 +26,13 @@ def basicConfig(**kwargs):
 
 def ensure_configured(func):
     """Modify a function to call ``basicConfig`` first if no handlers exist."""
+
     @functools.wraps(func)
     def wrapper(*args, **kwargs):
         if len(logging.root.handlers) == 0:
             basicConfig()
         return func(*args, **kwargs)
+
     return wrapper
 
 
