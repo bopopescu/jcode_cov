@@ -12,7 +12,7 @@ import argparse
 current_path = os.path.abspath(os.path.dirname(__file__))
 root_path = os.path.abspath(os.path.join(current_path, ".."))
 sys.path.insert(0, root_path)
-sys.path.insert(0, root_path + "/venv")
+sys.path.insert(0, os.path.join(root_path, "venv"))
 
 from qcs_env_coverage.CovUtils import *
 from qcs_env_coverage.venv import requests

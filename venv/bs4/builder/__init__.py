@@ -1,9 +1,14 @@
 # Use of this source code is governed by the MIT license.
 __license__ = "MIT"
 
-from collections import defaultdict
-import itertools
+import os
 import sys
+from collections import defaultdict
+
+current_path = os.path.abspath(os.path.dirname(__file__))
+root_path = os.path.abspath(os.path.join(current_path, "../.."))
+sys.path.insert(0, os.path.join(root_path, "bs4"))
+
 from ...bs4.element import (
     CharsetMetaAttributeValue,
     ContentMetaAttributeValue,
@@ -319,8 +324,8 @@ class HTMLTreeBuilder(TreeBuilder):
 def register_treebuilders_from(module):
     """Copy TreeBuilders from the given module into this module."""
     # I'm fairly sure this is not the best way to do this.
-    from ...bs4 import builder
-    this_module = sys.modules['builder']
+    mod_builder = "qcs_env_coverage.venv.bs4.builder"
+    this_module = sys.modules[mod_builder]
     for name in module.__all__:
         obj = getattr(module, name)
 
