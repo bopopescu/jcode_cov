@@ -4,9 +4,9 @@
 
 import os
 from time import sleep
-from bs4 import BeautifulSoup
 from qcs_env_coverage.venv import requests
 from qcs_env_coverage.CovLogger import CoverageLog
+from qcs_env_coverage.venv.bs4 import BeautifulSoup
 
 clog = CoverageLog.get_logger(os.path.basename(__file__))
 
