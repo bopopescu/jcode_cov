@@ -60,7 +60,7 @@ def _decorate_logger(logger):
 
 class CoverageLog(object):
     @classmethod
-    def get_logger(cls, name=None, log_file=default_log_file):
+    def get_logger(cls, name=None, log_file=None):
         """
         Coverage logger with a default colored formatter
         :param name:
