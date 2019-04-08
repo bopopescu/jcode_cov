@@ -145,8 +145,8 @@ def run_cmd(cmd, exception_on_errors=True):
     :return:
     """
     try:
-        process = subprocess.Popen(cmd, shell=True,
-                                   stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+        process = subprocess.Popen(cmd, shell=True, stdout=subprocess.PIPE,
+                                   stderr=subprocess.PIPE, encoding="utf-8")
     except Exception as err:
         clog.error("FAILED - run command: {}, {}".format(cmd, err))
         if exception_on_errors:
@@ -158,7 +158,7 @@ def run_cmd(cmd, exception_on_errors=True):
     return_code = process.returncode
     if return_code != 0:
         err_msg = "FAILED - none zero exit code in {}".format(cmd)
-        clog.error("{};\nstdout: {};\nstderr: {}\n".format(err_msg, stdout, stderr))
+        clog.error("{}; stdout: {}; stderr: {}".format(err_msg, stdout, stderr))
         if exception_on_errors:
             raise Exception(err_msg)
 
