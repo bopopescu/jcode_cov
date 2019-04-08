@@ -3,7 +3,7 @@
 #
 
 import os
-import types
+import pathlib
 import logging
 import logging.handlers
 from qcs_env_coverage.venv import colorlog
@@ -15,52 +15,9 @@ LOG_DIR = os.path.join(PROJECT_ROOT, "out")
 default_log_file = os.path.join(LOG_DIR, "{}.log".format(PROJECT_NAME))
 
 
-def h1(self, title):
-    self.info("=" * 120)
-    self.info(title.upper())
-    self.info("=" * 120)
-
-
-def h2(self, title):
-    self.info("=" * 100)
-    self.info(title.upper())
-    self.info("=" * 100)
-
-
-def h3(self, title):
-    self.info("=" * 80)
-    self.info(title.upper())
-    self.info("=" * 80)
-
-
-def sep1(self):
-    self.info("-" * 80)
-
-
-def sep2(self):
-    self.info("-" * 60)
-
-
-def sep3(self):
-    self.info("-" * 40)
-
-
-def _decorate_logger(logger):
-    """
-    Decorate logger with custom methods
-    :param logger:
-    """
-    logger.h1 = types.MethodType(h1, logger)
-    logger.h2 = types.MethodType(h2, logger)
-    logger.h3 = types.MethodType(h3, logger)
-    logger.sep1 = types.MethodType(sep1, logger)
-    logger.sep2 = types.MethodType(sep2, logger)
-    logger.sep3 = types.MethodType(sep3, logger)
-
-
 class CoverageLog(object):
     @classmethod
-    def get_logger(cls, name=None, log_file=None):
+    def get_logger(cls, name=None, log_file=default_log_file):
         """
         Coverage logger with a default colored formatter
         :param name:
@@ -91,7 +48,7 @@ class CoverageLog(object):
         s_handler.setFormatter(color_formatter)
         mylogger.addHandler(s_handler)
 
-        if log_file is not None:
+        if log_file:
             f_handler = logging.handlers.RotatingFileHandler(
                 log_file,
                 maxBytes=16732,
@@ -101,12 +58,9 @@ class CoverageLog(object):
             f_handler.setFormatter(formatter)
             mylogger.addHandler(f_handler)
 
-        _decorate_logger(mylogger)
         return mylogger
 
 
 # Setup default logger
-if not os.path.exists(LOG_DIR):
-    os.makedirs(LOG_DIR)
-logger = CoverageLog.get_logger(name="DefaultCoverage", log_file=default_log_file)
-_decorate_logger(logger)
+pathlib.Path(LOG_DIR).mkdir(parents=True, exist_ok=True)
+logger = CoverageLog.get_logger(name=PROJECT_NAME, log_file=default_log_file)
