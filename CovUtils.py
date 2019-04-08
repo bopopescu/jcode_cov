@@ -158,7 +158,7 @@ def run_cmd(cmd, exception_on_errors=True):
     return_code = process.returncode
     if return_code != 0:
         err_msg = "FAILED - none zero exit code in {}".format(cmd)
-        clog.error("{}; stdout: {}; stderr: {}".format(err_msg, stdout, stderr))
+        clog.error("{};\nstdout: {};\nstderr: {}\n".format(err_msg, stdout, stderr))
         if exception_on_errors:
             raise Exception(err_msg)
 
