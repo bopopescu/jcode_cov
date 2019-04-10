@@ -12,8 +12,9 @@ clog = CoverageLog.get_logger(os.path.basename(__file__))
 
 
 def get_login_data():
-    url = "https://ssosv.sankuai.com/login?service=https%3A%2F%2Fsso.sankuai.com%2Fproxy%3FclientService%3Dhttp%253A" \
-          "%252F%252Fplus.sankuai.com%252Flogin%253Furl%253Dhttp%25253A%25252F%25252Fplus.sankuai.com%25252F "
+    url = "https://ssosv.sankuai.com/login?service=https%3A%2F%2Fsso.sankuai.com" \
+          "%2Fproxy%3FclientService%3Dhttp%253A%252F%252Fplus.sankuai.com%252Flogin" \
+          "%253Furl%253Dhttp%25253A%25252F%25252Fplus.sankuai.com%25252F "
     info = requests.get(url, verify=False)
     sleep(1)
     soup = BeautifulSoup(info.text, "html.parser")

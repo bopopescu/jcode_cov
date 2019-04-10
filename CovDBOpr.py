@@ -52,7 +52,7 @@ def get_jenkins_url_by_jobname(jobname):
                 else job_url
                 END as job_url
             from cover_rage_job_org where job_name = "{}"
-        """.format(jobname)
+          """.format(jobname)
     result = dbo.select_sql(sql)
 
     if len(result) > 0:
