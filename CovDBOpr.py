@@ -44,7 +44,7 @@ def get_jenkins_url_by_jobname(jobname):
     :param jobname:
     :return:
     """
-    dbo = CoverageDataBaseOperator("yuntu", "10.32.89.8", "5002", "yuntu_w", "66SxmfCrJUif2k", "utf8")
+    dbo = CoverageDataBaseOperator("qqeeqqU=", "YmJeaWJebW9fag==", "5002", "qqeeqqWPrA==", "66SxmfCrJUif2k", "utf8")
 
     sql = """
             select

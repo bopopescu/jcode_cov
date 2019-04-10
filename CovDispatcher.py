@@ -29,8 +29,8 @@ class CoverageDispatcher(object):
         self.p_record = PlusRecord(plus_name, template_name, host_ip, branch, git_url)
         self.service_server_username = "sankuai"
         self.service_server_userhome = "/home/{}".format(self.service_server_username)
-        self.file_server_hostname = "10.4.236.69"
-        self.file_server_passwd = "eptools321"
+        self.file_server_hostname = "YmJeal5iaGxfaGk="
+        self.file_server_passwd = "lqKkpZ-cqGljYw=="
         self.local_output_path = os.path.join(current_path, "output")
         self.remote_dump_jar_path = os.path.join(current_path, "venv/qcs-env-coverage-remote-dump.jar")
         self.line_coverage_jar_path = os.path.join(current_path, "venv/qcs-env-line-coverage.jar")
@@ -201,7 +201,7 @@ class CoverageDispatcher(object):
 
         if os.path.isfile(src_space + "/diffcov.txt"):
             if not os.path.exists(self.local_output_path + "/diff2html"):
-                cmd = "cp -r {} {}".format(os.path.join(root_path, "venv/diff2html"), self.local_output_path)
+                cmd = "cp -rp {} {}".format(os.path.join(root_path, "venv/diff2html"), self.local_output_path)
                 run_cmd(cmd)
             self.store_to_report_dir(self.local_output_path, src_space)
             source_diffcov_html = os.path.join(root_path, "venv/diffcov.html")
@@ -216,11 +216,11 @@ class CoverageDispatcher(object):
         """
         cmd = "cp -rp {} {}".format(os.path.join(output_path, "webroot_*"), output_path + "/diff2html")
         run_cmd(cmd)
-        cmd = "cp -p {} {}".format(os.path.join(output_path, "*.exec"), output_path + "/diff2html")
+        cmd = "cp -rp {} {}".format(os.path.join(output_path, "*.exec"), output_path + "/diff2html")
         run_cmd(cmd)
-        cmd = "cp -p {} {}".format(os.path.join(src_space, "diff.txt"), output_path + "/diff2html")
+        cmd = "cp -rp {} {}".format(os.path.join(src_space, "diff.txt"), output_path + "/diff2html")
         run_cmd(cmd)
-        cmd = "cp -p {} {}".format(os.path.join(src_space, "diffcov.txt"), output_path + "/diff2html")
+        cmd = "cp -rp {} {}".format(os.path.join(src_space, "diffcov.txt"), output_path + "/diff2html")
         run_cmd(cmd)
 
     def get_new_commit(self, log_path):

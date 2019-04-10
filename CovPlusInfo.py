@@ -20,8 +20,8 @@ def get_login_data():
     inputs = soup.find_all("input")
 
     login_data = {
-        "username": "ep.delicious",
-        "password": "Meishitest123",
+        "username": "lqJempWcnpmaoaWp",
+        "password": "fpeZqZiZqZukpmFoYw==",
         "service": "https://sso.sankuai.com/proxy?clientService=http%3A%2F%2Fplus.sankuai.com"
                    "%2Flogin%3Furl%3Dhttp%253A%252F%252Fplus.sankuai.com%252F",
         "lt": inputs[-3].attrs["value"],
@@ -82,8 +82,8 @@ class PlusRecord(object):
         self.base_url = "http://plus.sankuai.com"
         self.plus_name = plus_name
         self.template_name = template_name
-        self.username = "ep.delicious"
-        self.password = "Meishitest123"
+        self.username = "lqJempWcnpmaoaWp"
+        self.password = "fpeZqZiZqZukpmFoYw=="
         self.branch = branch
         self.host = ip
 
@@ -101,7 +101,7 @@ class PlusRecord(object):
     def init(self):
         plus_detail = self.get_item_info_by_name()
         if plus_detail is None or "Id" not in plus_detail:
-            clog.error("获取Plus发布项{}配置失败".format(self.plus_name))
+            clog.error("Failed to get the Plus release {} config".format(self.plus_name))
             return None
 
         git_url = plus_detail["Repository"]
@@ -127,21 +127,21 @@ class PlusRecord(object):
             return None
         return response.json()
 
-    def get_all_deploy_record_by_id(self, item_id):
+    def get_all_deploy_record_by_id(self, release_id):
         """
         Get deployment records.
         The ugly implementation is used now, and the interface is later coordinated.
-        :param item_id:
+        :param release_id:
         :return:
         """
-        url = "{}{}".format(self.base_url, "/release/{}/joblist?offset=0&limit=1000".format(item_id))
+        url = "{}{}".format(self.base_url, "/release/{}/joblist?offset=0&limit=1000".format(release_id))
         sleep(1)
         clog.info(url)
         try:
             response = requests.get(url)
             sleep(1)
             if response.status_code != 200:
-                clog.error("获取Plus所有部署记录失败")
+                clog.error("Failed to get all deploy records for Plus")
                 return None
             return response.json()
 
@@ -149,15 +149,15 @@ class PlusRecord(object):
             clog.error("error {}".format(e))
             return None
 
-    def get_template_deploy_record_by_id(self, item_id):
+    def get_template_deploy_record_by_id(self, release_id):
         """
         Get template env deploy info, template.
         The template is the name of the template defined by plus.
-        :param item_id:
+        :param release_id:
         :return:
         """
         records = []
-        raw_detail = self.get_all_deploy_record_by_id(item_id)
+        raw_detail = self.get_all_deploy_record_by_id(release_id)
 
         if raw_detail is not None:
             for item in raw_detail:
@@ -165,14 +165,14 @@ class PlusRecord(object):
                     records.append(item)
         return records
 
-    def get_template_last_deploy_record_by_name(self, records, item_id):
+    def get_template_last_deploy_record_by_name(self, records, release_id):
         """
         :param records:
-        :param item_id:
+        :param release_id:
         :return:
         """
         last_daemon_job_id = records[0]["DaemonJobId"]
-        last_detail_url = "{}/ui/release/{}/job/{}/detail".format(self.base_url, item_id, last_daemon_job_id)
+        last_detail_url = "{}/ui/release/{}/job/{}/detail".format(self.base_url, release_id, last_daemon_job_id)
 
         clog.info(last_detail_url)
         try:
