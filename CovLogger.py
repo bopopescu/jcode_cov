@@ -3,6 +3,7 @@
 #
 
 import os
+import types
 import pathlib
 import logging
 import logging.handlers
@@ -13,6 +14,49 @@ PROJECT_NAME = os.path.basename(PROJECT_ROOT)
 
 LOG_DIR = os.path.join(PROJECT_ROOT, "out")
 default_log_file = os.path.join(LOG_DIR, "{}.log".format(PROJECT_NAME))
+
+
+def h1(self, title):
+    self.info("=" * 120)
+    self.info(title.upper())
+    self.info("=" * 120)
+
+
+def h2(self, title):
+    self.info("=" * 100)
+    self.info(title.upper())
+    self.info("=" * 100)
+
+
+def h3(self, title):
+    self.info("=" * 80)
+    self.info(title.upper())
+    self.info("=" * 80)
+
+
+def sep1(self):
+    self.info("-" * 80)
+
+
+def sep2(self):
+    self.info("-" * 60)
+
+
+def sep3(self):
+    self.info("-" * 40)
+
+
+def _decorate_logger(dlogger):
+    """
+    Decorate logger with custom methods
+    :param dlogger:
+    """
+    dlogger.h1 = types.MethodType(h1, dlogger)
+    dlogger.h2 = types.MethodType(h2, dlogger)
+    dlogger.h3 = types.MethodType(h3, dlogger)
+    dlogger.sep1 = types.MethodType(sep1, dlogger)
+    dlogger.sep2 = types.MethodType(sep2, dlogger)
+    dlogger.sep3 = types.MethodType(sep3, dlogger)
 
 
 class CoverageLog(object):
@@ -58,9 +102,11 @@ class CoverageLog(object):
             f_handler.setFormatter(formatter)
             mylogger.addHandler(f_handler)
 
+        _decorate_logger(mylogger)
         return mylogger
 
 
 # Setup default logger
 pathlib.Path(LOG_DIR).mkdir(parents=True, exist_ok=True)
 logger = CoverageLog.get_logger(name=PROJECT_NAME, log_file=default_log_file)
+_decorate_logger(logger)
