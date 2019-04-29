@@ -7,7 +7,7 @@ import sys
 from time import sleep
 from qcs_env_coverage.CovLogger import CoverageLog
 
-clog = CoverageLog.get_logger(os.path.basename(__file__))
+logger = CoverageLog.get_logger(os.path.basename(__file__))
 current_path = os.path.abspath(os.path.dirname(__file__))
 root_path = os.path.abspath(os.path.join(current_path, ".."))
 sys.path.insert(0, root_path)
@@ -55,7 +55,7 @@ def get_login_data():
         "time": time,
         "sign": sign,
     }
-    clog.info(plus_param)
+    logger.info(plus_param)
     plus_url = "http://plus.sankuai.com/login?url=http://plus.sankuai.com/"
     headers = {
         "Cookie": cookie,
@@ -79,7 +79,7 @@ def get_login_data():
     for item in response.cookies.items():
         cookie += "{}={};".format(item[0], item[1])
     cookie = cookie[:-1]
-    clog.info(cookie)
+    logger.info(cookie)
     return {"Cookie": cookie}
 
 
@@ -107,7 +107,7 @@ class PlusRecord(object):
     def init(self):
         plus_detail = self.get_item_info_by_name()
         if plus_detail is None or "Id" not in plus_detail:
-            clog.error("获取Plus发布项{}配置失败".format(self.plus_name))
+            logger.error("获取Plus发布项{}配置失败".format(self.plus_name))
             return None
 
         git_url = plus_detail["Repository"]
@@ -142,17 +142,17 @@ class PlusRecord(object):
         """
         url = "{}{}".format(self.base_url, "/release/{}/joblist?offset=0&limit=1000".format(item_id))
         sleep(1)
-        clog.info(url)
+        logger.info(url)
         try:
             response = requests.get(url)
             sleep(1)
             if response.status_code != 200:
-                clog.error("获取Plus所有部署记录失败")
+                logger.error("获取Plus所有部署记录失败")
                 return None
             return response.json()
 
         except Exception as e:
-            clog.error("error {}".format(e))
+            logger.error("error {}".format(e))
             return None
 
     def get_template_deploy_record_by_id(self, item_id):
@@ -180,7 +180,7 @@ class PlusRecord(object):
         last_daemon_job_id = records[0]["DaemonJobId"]
         last_detail_url = "{}/ui/release/{}/job/{}/detail".format(self.base_url, item_id, last_daemon_job_id)
 
-        clog.info(last_detail_url)
+        logger.info(last_detail_url)
         try:
             response = requests.get(last_detail_url,
                                     headers={"Cookie": "deploytoken=91865de3-16f1-456c-9b88-311a1dfbb8e6"},
@@ -191,19 +191,19 @@ class PlusRecord(object):
                 return None
             return response.json()
         except Exception as e:
-            clog.error("error {}".format(e))
+            logger.error("error {}".format(e))
             return None
 
     def get_all(self):
         url = "{}/release/list/all".format(self.base_url)
         response = requests.get(url)
-        clog.info(response.text)
+        logger.info(response.text)
 
     def output_init_info(self):
-        clog.info(self.git)
-        clog.info(self.branch)
-        clog.info(self.commit)
-        clog.info(self.host)
+        logger.info(self.git)
+        logger.info(self.branch)
+        logger.info(self.commit)
+        logger.info(self.host)
 
 
 if __name__ == "__main__":
