@@ -7,7 +7,7 @@ from errno import errorcode
 from qcs_env_coverage.venv import connector
 from qcs_env_coverage.CovLogger import CoverageLog
 
-clog = CoverageLog.get_logger(os.path.basename(__file__))
+logger = CoverageLog.get_logger(os.path.basename(__file__))
 
 
 class CoverageDataBaseOperator(object):
@@ -23,14 +23,14 @@ class CoverageDataBaseOperator(object):
             self.cursor = self.con.cursor()
         except connector.Error as err:
             if err.errno == errorcode.ER_ACCESS_DENIED_ERROR:
-                clog.error("Something is wrong with your user name or password")
+                logger.error("Something is wrong with your user name or password")
             elif err.errno == errorcode.ER_BAD_DB_ERROR:
-                clog.error("Database does not exist")
+                logger.error("Database does not exist")
             else:
-                clog.error(err)
+                logger.error(err)
 
     def select_sql(self, sql):
-        clog.info(sql)
+        logger.info(sql)
         self.cursor.execute(sql)
         return self.cursor.fetchall()
 
