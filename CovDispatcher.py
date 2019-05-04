@@ -43,9 +43,9 @@ class CoverageDispatcher(object):
         scp_to_remote(self.p_record.host, self.service_server_username, "",
                       self.service_server_userhome + os.sep, self.remote_dump_jar_path)
 
-        remote_dump_jar_path = path_join(self.service_server_userhome, "qcs-env-coverage-remote-dump.jar")
+        _remote_dump_jar_path = path_join(self.service_server_userhome, "qcs-env-coverage-remote-dump.jar")
         run_jar_cmd = "java -jar {} {} {} clean".format(
-            remote_dump_jar_path, self.p_record.host, port)
+            _remote_dump_jar_path, self.p_record.host, port)
         remote_cmd("{}@{}".format(self.service_server_username, self.p_record.host), "", run_jar_cmd)
 
     def dump(self, remote_class_path, port, jobname, old_commit, new_commit, old_branch, job_url):
