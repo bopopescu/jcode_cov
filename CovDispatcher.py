@@ -173,7 +173,7 @@ class CoverageDispatcher(object):
             run_cmd(cmd)
         else:
             if old_commit is None:
-                logger.info("Did not fill in --old-commit for src code,git increments could not be obtained.")
+                logger.info("Did not fill in --old-commit for src code, git increments could not be obtained.")
                 return
 
             if new_commit is None:
