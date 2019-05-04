@@ -13,7 +13,7 @@ PROJECT_ROOT = os.path.abspath(os.path.join(os.path.dirname(__file__)))
 PROJECT_NAME = os.path.basename(PROJECT_ROOT)
 
 LOG_DIR = os.path.join(PROJECT_ROOT, "out")
-default_log_file = os.path.join(LOG_DIR, "{}.log".format(PROJECT_NAME))
+default_log_file = os.path.join(LOG_DIR, f"{PROJECT_NAME}.log")
 
 
 def h1(self, title):

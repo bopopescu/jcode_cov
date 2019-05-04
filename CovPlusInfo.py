@@ -36,7 +36,7 @@ def get_login_data():
     sleep(1)
     cookie = ""
     for item in response.cookies.items():
-        cookie += "{}={};".format(item[0], item[1])
+        cookie += f"{item[0]}={item[1]};"
     cookie = cookie[:-1]
 
     soup = BeautifulSoup(response.text, "html.parser")
@@ -72,7 +72,7 @@ def get_login_data():
     sleep(1)
     cookie = ""
     for item in response.cookies.items():
-        cookie += "{}={};".format(item[0], item[1])
+        cookie += f"{item[0]}={item[1]};"
     cookie = cookie[:-1]
     logger.info(cookie)
     return {"Cookie": cookie}
@@ -102,7 +102,7 @@ class PlusRecord(object):
     def init(self):
         plus_detail = self.get_item_info_by_name()
         if plus_detail is None or "Id" not in plus_detail:
-            logger.error("Failed to get the Plus release {} config".format(self.plus_name))
+            logger.error(f"Failed to get the Plus release {self.plus_name} config")
             return None
 
         git_url = plus_detail["Repository"]
@@ -121,7 +121,7 @@ class PlusRecord(object):
         Get a deployment detail
         :return:
         """
-        req_url = "{}{}?release_name={}".format(self.base_url, "/release_detail", self.plus_name)
+        req_url = f"{self.base_url}/release_detail?release_name={self.plus_name}"
         response = requests.get(req_url, verify=False)
         sleep(1)
         if response.status_code != 200:
@@ -135,7 +135,7 @@ class PlusRecord(object):
         :param release_id:
         :return:
         """
-        url = "{}{}".format(self.base_url, "/release/{}/joblist?offset=0&limit=1000".format(release_id))
+        url = f"{self.base_url}/release/{release_id}/joblist?offset=0&limit=1000"
         sleep(1)
         logger.info(url)
         try:
@@ -147,7 +147,7 @@ class PlusRecord(object):
             return response.json()
 
         except Exception as e:
-            logger.error("error {}".format(e))
+            logger.error(f"error {e}")
             return None
 
     def get_template_deploy_record_by_id(self, release_id):
@@ -173,7 +173,7 @@ class PlusRecord(object):
         :return:
         """
         last_daemon_job_id = records[0]["DaemonJobId"]
-        last_detail_url = "{}/ui/release/{}/job/{}/detail".format(self.base_url, release_id, last_daemon_job_id)
+        last_detail_url = f"{self.base_url}/ui/release/{release_id}/job/{last_daemon_job_id}/detail"
 
         logger.info(last_detail_url)
         try:
@@ -186,11 +186,11 @@ class PlusRecord(object):
                 return None
             return response.json()
         except Exception as e:
-            logger.error("error {}".format(e))
+            logger.error(f"error {e}")
             return None
 
     def get_all(self):
-        url = "{}/release/list/all".format(self.base_url)
+        url = f"{self.base_url}/release/list/all"
         response = requests.get(url)
         logger.info(response.text)
 

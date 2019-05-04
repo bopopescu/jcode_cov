@@ -27,7 +27,7 @@ def remote_cmd(remote, passwd, cmd):
     :param cmd:
     :return:
     """
-    ssh_cmd = "ssh " + remote + " \"" + cmd + "\""
+    ssh_cmd = f'ssh {remote} "{cmd}"'
     ssh = pexpect.spawn("/bin/bash", ["-c", ssh_cmd], timeout=12)
     pwd_count = 0
     while 1:
@@ -49,7 +49,7 @@ def remote_cmd(remote, passwd, cmd):
             break
         except pexpect.TIMEOUT:
             break
-    logger.info("【run ssh cmd】" + ssh_cmd)
+    logger.info(f"【run ssh cmd】{ssh_cmd}")
     return 0
 
 
@@ -63,10 +63,10 @@ def scp_to_remote(host, user, passwd, remote_path, local_path):
     :param local_path:
     :return:
     """
-    remote_mk_dir_cmd = "sudo mkdir -p {}".format(remote_path)
-    remote_cmd("{}@{}".format(user, host), passwd, remote_mk_dir_cmd)
-    logger.info("Copying to remote from {} to {}".format(local_path, remote_path))
-    scp_cmd = "scp -rp " + local_path + " " + user + "@" + host + ":" + remote_path
+    remote_mk_dir_cmd = f"sudo mkdir -p {remote_path}"
+    remote_cmd(f"{user}@{host}", passwd, remote_mk_dir_cmd)
+    logger.info(f"Copying to remote from {local_path} to {remote_path}")
+    scp_cmd = f"scp -rp {local_path} {user}@{host}:{remote_path}"
     ssh = pexpect.spawn("/bin/bash", ["-c", scp_cmd], timeout=600)
     pwd_count = 0
     while 1:
@@ -103,16 +103,16 @@ def get_from_remote(host, user, passwd, remote_path, local_path):
     """
     # This directory does not require super permissions
     logger.info("Create local directory and set its permission with rwx.")
-    cmd = "mkdir -p {} && chmod 777 {}".format(local_path, local_path)
+    cmd = f"mkdir -p {local_path} && chmod 777 {local_path}"
     if run_cmd(cmd) is False:
-        run_cmd("mkdir -p {}".format(local_path))
+        run_cmd(f"mkdir -p {local_path}")
 
     if not os.path.exists(local_path):
-        logger.error("FAILED - create {}.".format(local_path))
+        logger.error(f"FAILED - create {local_path}.")
         return -1
 
-    logger.info("Copying to local from {} to {}".format(remote_path, local_path))
-    scp_cmd = "scp -rp {}@{}:{} {}".format(user, host, remote_path, local_path)
+    logger.info(f"Copying to local from {remote_path} to {local_path}")
+    scp_cmd = f"scp -rp {user}@{host}:{remote_path} {local_path}"
     ssh = pexpect.spawn("/bin/bash", ["-c", scp_cmd], timeout=600)
     pwd_count = 0
     while 1:
@@ -148,7 +148,7 @@ def run_cmd(cmd, exception_on_errors=True):
         process = subprocess.Popen(cmd, shell=True, stdout=subprocess.PIPE,
                                    stderr=subprocess.PIPE, encoding="utf-8")
     except Exception as err:
-        logger.error("FAILED - run command: {}, {}".format(cmd, err))
+        logger.error(f"FAILED - run command: {cmd}, {err}")
         if exception_on_errors:
             raise Exception(err)
 
@@ -157,8 +157,8 @@ def run_cmd(cmd, exception_on_errors=True):
 
     return_code = process.returncode
     if return_code != 0:
-        err_msg = "FAILED - none zero exit code in {}".format(cmd)
-        logger.error("{}; stdout: {}; stderr: {}".format(err_msg, stdout, stderr))
+        err_msg = f"FAILED - none zero exit code in {cmd}"
+        logger.error(f"{err_msg}; stdout: {stdout}; stderr: {stderr}")
         if exception_on_errors:
             raise Exception(err_msg)
 
@@ -186,10 +186,10 @@ def handle_error(func, path, exc_info):
     :param path:
     :param exc_info:
     """
-    logger.info("Handling Error for file ", path)
+    logger.info(f"Handling Error for file {path}")
     logger.info(exc_info)
     if not os.access(path, os.W_OK):
-        logger.info("Re-handle {}".format(path))
+        logger.info(f"Re-handle {path}")
         os.chmod(path, stat.S_IWUSR)
         func(path)
 
@@ -239,7 +239,7 @@ def selective_copy(source, target, file_extension=None):
         except shutil.Error:
             pass
         except IOError as e:
-            logger.error("IO Error: {}".format(e.strerror))
+            logger.error(f"IO Error: {e.strerror}")
 
 
 def extract_pack(pack_name, target_dir):
@@ -271,9 +271,9 @@ def _extract_pack(pack, target_dir):
         with ZipFile(pack, "r") as zf:
             zf.extractall(target_dir)
     except zipfile.BadZipFile as zb:
-        logger.error("BadZipFile: {}".format(zb))
+        logger.error(f"BadZipFile: {zb}")
     except zipfile.LargeZipFile as zl:
-        logger.error("LargeZipFile: {}".format(zl))
+        logger.error(f"LargeZipFile: {zl}")
     except Exception:
         exc_type, exc_value, exc_tb = sys.exc_info()
         logger.error(traceback.format_exception(exc_type, exc_value, exc_tb))
