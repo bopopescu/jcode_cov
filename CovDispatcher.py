@@ -28,11 +28,11 @@ class CoverageDispatcher(object):
         self.p_record = PlusRecord(plus_name, template_name, host_ip, branch, git_url)
         self.service_server_username = "sankuai"
         self.service_server_userhome = "/home/{}".format(self.service_server_username)
-        self.file_server_hostname = "10.4.236.69"
-        self.file_server_passwd = "eptools321"
+        self.file_server_hostname = "YmJeal5iaGxfaGk="
+        self.file_server_passwd = "lqKkpZ-cqGljYw=="
         self.local_output_path = os.path.join(current_path, "output")
-        self.remote_dump_jar_path = os.path.join(current_path, "venv/qcs-env-coverage-remote-dump.jar")
-        self.line_coverage_jar_path = os.path.join(current_path, "venv/qcs-env-line-coverage.jar")
+        self.remote_dump_jar_path = os.path.join(current_path, "venv", "qcs-env-coverage-remote-dump.jar")
+        self.line_coverage_jar_path = os.path.join(current_path, "venv", "qcs-env-line-coverage.jar")
 
     def clean(self, port):
         """
@@ -41,10 +41,11 @@ class CoverageDispatcher(object):
         :param port:
         """
         scp_to_remote(self.p_record.host, self.service_server_username, "",
-                      "{}/".format(self.service_server_userhome), self.remote_dump_jar_path)
+                      self.service_server_userhome + os.sep, self.remote_dump_jar_path)
 
-        run_jar_cmd = "java -jar {}/qcs-env-coverage-remote-dump.jar {} {} clean".format(
-            self.service_server_userhome, self.p_record.host, port)
+        remote_dump_jar_path = path_join(self.service_server_userhome, "qcs-env-coverage-remote-dump.jar")
+        run_jar_cmd = "java -jar {} {} {} clean".format(
+            remote_dump_jar_path, self.p_record.host, port)
         remote_cmd("{}@{}".format(self.service_server_username, self.p_record.host), "", run_jar_cmd)
 
     def dump(self, remote_class_path, port, jobname, old_commit, new_commit, old_branch, job_url):
@@ -182,8 +183,9 @@ class CoverageDispatcher(object):
                 cmd = "cd {} && git log > git.log".format(src_space)
                 run_cmd(cmd)
 
-                new_commit = self.get_new_commit(src_space + "/git.log")
-                run_cmd("rm -rf {}/git.log".format(src_space))
+                src_space_git_log = path_join(src_space, "git.log")
+                new_commit = self.get_new_commit(src_space_git_log)
+                run_cmd("rm -rf {}".format(src_space_git_log))
                 if new_commit is None:
                     logger.error("{}, {}".format("Did not fill in --new-commit for src code",
                                                  "git log does not get the latest commit."))
@@ -195,31 +197,32 @@ class CoverageDispatcher(object):
         excludes = self.get_jenkins_exclusion_pattern(jobname, job_url)
 
         run_jar_cmd = "java -Dfile.encoding=utf-8 -jar {} {} {} {}".format(
-            self.line_coverage_jar_path, src_space + "/diff.txt", self.p_record.plus_name, excludes)
+            self.line_coverage_jar_path, path_join(src_space, "diff.txt"), self.p_record.plus_name, excludes)
         run_cmd(run_jar_cmd)
 
-        if os.path.isfile(src_space + "/diffcov.txt"):
-            if not os.path.exists(self.local_output_path + "/diff2html"):
-                cmd = "cp -r {} {}".format(os.path.join(root_path, "venv/diff2html"), self.local_output_path)
+        if os.path.isfile(path_join(src_space, "diffcov.txt")):
+            if not os.path.exists(path_join(self.local_output_path, "diff2html")):
+                cmd = "cp -rp {} {}".format(path_join(root_path, "venv", "diff2html"), self.local_output_path)
                 run_cmd(cmd)
             self.store_to_report_dir(self.local_output_path, src_space)
-            source_diffcov_html = os.path.join(root_path, "venv/diffcov.html")
-            target_diffcov_html = self.local_output_path + "/diff2html/" + self.p_record.plus_name + ".html"
+            source_diffcov_html = path_join(root_path, "venv", "diffcov.html")
+            target_diffcov_html = path_join(self.local_output_path, "diff2html", self.p_record.plus_name + ".html")
 
-            self.get_diff_cov_to_html(src_space + "/diffcov.txt", source_diffcov_html, target_diffcov_html)
+            self.get_diff_cov_to_html(path_join(src_space, "diffcov.txt"), source_diffcov_html, target_diffcov_html)
 
     def store_to_report_dir(self, output_path, src_space):
         """
         :param output_path:
         :param src_space:
         """
-        cmd = "cp -rp {} {}".format(os.path.join(output_path, "webroot_*"), output_path + "/diff2html")
+        diff2html_dir = path_join(output_path, "diff2html")
+        cmd = "cp -rp {} {}".format(os.path.join(output_path, "webroot_*"), diff2html_dir)
         run_cmd(cmd)
-        cmd = "cp -p {} {}".format(os.path.join(output_path, "*.exec"), output_path + "/diff2html")
+        cmd = "cp -rp {} {}".format(os.path.join(output_path, "*.exec"), diff2html_dir)
         run_cmd(cmd)
-        cmd = "cp -p {} {}".format(os.path.join(src_space, "diff.txt"), output_path + "/diff2html")
+        cmd = "cp -rp {} {}".format(os.path.join(src_space, "diff.txt"), diff2html_dir)
         run_cmd(cmd)
-        cmd = "cp -p {} {}".format(os.path.join(src_space, "diffcov.txt"), output_path + "/diff2html")
+        cmd = "cp -rp {} {}".format(os.path.join(src_space, "diffcov.txt"), diff2html_dir)
         run_cmd(cmd)
 
     def get_new_commit(self, log_path):
@@ -396,17 +399,18 @@ class CoverageDispatcher(object):
                 class_flag = True
 
         if jacoco_flag and class_flag:
-            file_server_root = "{}/jacocoReports".format(self.service_server_userhome)
-            job_path = os.path.join(file_server_root, jobname)
-            date_path = os.path.join(job_path, date_path)
+            file_server_root = path_join(self.service_server_userhome, "jacocoReports")
+            job_path = path_join(file_server_root, jobname)
+            date_path = path_join(job_path, date_path)
+            r_user = "root"
 
             cmd = "sudo mkdir {} && sudo chmod 777 {}".format(job_path, job_path)
-            remote_cmd("root@{0}".format(self.file_server_hostname), self.file_server_passwd, cmd)
+            remote_cmd("{}@{}".format(r_user, self.file_server_hostname), self.file_server_passwd, cmd)
 
             cmd = "sudo mkdir {} && sudo chmod 777 {}".format(date_path, date_path)
-            remote_cmd("root@{0}".format(self.file_server_hostname), self.file_server_passwd, cmd)
+            remote_cmd("{}@{}".format(r_user, self.file_server_hostname), self.file_server_passwd, cmd)
 
-            scp_to_remote(self.file_server_hostname, "root", self.file_server_passwd,
+            scp_to_remote(self.file_server_hostname, r_user, self.file_server_passwd,
                           date_path, self.local_output_path)
         else:
             logger.error("lack jacoco.exec and classes")
@@ -517,20 +521,6 @@ def main():
 
         coverage_master.dump(classes, port, jobname, args.old_commit, args.new_commit, args.old_branch,
                              args.job_url)
-
-
-def test_generate():
-    logger.info("start")
-    coverage_master = CoverageDispatcher("test", "test", "test", "test")
-    diffcov_txt = "/Users/OVERFLY/downloads/output-insurance-qcs-blankerror/src_meituan.insurance.\
-    unification.wmaccess2018-12-16-13-15-07/insurance-qcs-package/diffcov.txt"
-    diffcov_txt = "/Users/OVERFLY/downloads/output-correct/src_meituan.train.train.insuranceapi2018-12-21-16-39-26/\
-    travel-insurance/diffcov.txt"
-    diffcov_txt = "/Users/OVERFLY/downloads/output/src_meituan.zc.cos.acquirerregister2018-12-16-15-16-15/\
-    zcm-acquirer-register/diffcovtest.txt"
-    src_html = os.path.join(root_path, "venv/diffcov.html")
-    target_html = "/Users/OVERFLY/downloads/output-diffcovzero/diff2html/test_index.html"
-    coverage_master.get_diff_cov_to_html(diffcov_txt, src_html, target_html)
 
 
 if __name__ == "__main__":

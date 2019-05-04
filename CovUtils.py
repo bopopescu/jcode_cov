@@ -280,6 +280,15 @@ def _extract_pack(pack, target_dir):
         logger.error(traceback.format_exception(exc_type, exc_value, exc_tb))
 
 
+def path_join(*args):
+    """
+    Join two or more pathname components
+    :param args:
+    :return:
+    """
+    return os.path.join(*args)
+
+
 def time_now_dyna():
     """
     Get the local time dynamically

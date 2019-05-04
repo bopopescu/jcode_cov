@@ -88,8 +88,8 @@ class PlusRecord(object):
         self.base_url = "http://plus.sankuai.com"
         self.plus_name = plus_name
         self.template_name = template_name
-        self.username = "ep.delicious"
-        self.password = "Meishitest123"
+        self.username = "lqJempWcnpmaoaWp"
+        self.password = "fpeZqZiZqZukpmFoYw=="
         self.branch = branch
         self.host = ip
 
@@ -107,7 +107,7 @@ class PlusRecord(object):
     def init(self):
         plus_detail = self.get_item_info_by_name()
         if plus_detail is None or "Id" not in plus_detail:
-            logger.error("获取Plus发布项{}配置失败".format(self.plus_name))
+            logger.error("Failed to get the Plus release {} config".format(self.plus_name))
             return None
 
         git_url = plus_detail["Repository"]
@@ -147,7 +147,7 @@ class PlusRecord(object):
             response = requests.get(url)
             sleep(1)
             if response.status_code != 200:
-                logger.error("获取Plus所有部署记录失败")
+                logger.error("Failed to get all deploy records for Plus")
                 return None
             return response.json()
 
@@ -208,8 +208,8 @@ class PlusRecord(object):
 
 if __name__ == "__main__":
     template_n = "test"
-    plus_n = "meituan.meishi.crm.ms"
+    plus_n = "meituan.qcs.service.messagecenter"
 
-    p_record = PlusRecord(plus_n, template_n, "10.5.245.163", "master")
+    p_record = PlusRecord(plus_n, template_n, "10.21.250.248", "master")
     if p_record.git_url is None:
         p_record.output_init_info()
