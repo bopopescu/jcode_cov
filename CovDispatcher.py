@@ -173,8 +173,7 @@ class CoverageDispatcher(object):
             run_cmd(cmd)
         else:
             if old_commit is None:
-                logger.info("Did not fill in --old-commit for src code,",
-                            "git increments could not be obtained.")
+                logger.info("Did not fill in --old-commit for src code, git increments could not be obtained.")
                 return
 
             if new_commit is None:
@@ -185,8 +184,7 @@ class CoverageDispatcher(object):
                 new_commit = self.get_new_commit(src_space_git_log)
                 run_cmd(f"rm -rf {src_space_git_log}")
                 if new_commit is None:
-                    logger.error("Did not fill in --new-commit for src code,"
-                                 "git log does not get the latest commit.")
+                    logger.error("Did not fill in --new-commit for src code, git log does not get the latest commit.")
                     return
 
         cmd = f"cd {src_space} && git diff {old_commit} {new_commit} > diff.txt"
