@@ -198,10 +198,10 @@ class CoverageDispatcher(object):
 
         if os.path.isfile(path_join(src_space, "diffcov.txt")):
             if not os.path.exists(path_join(self.local_output_path, "diff2html")):
-                cmd = f"cp -rp {path_join(root_path, 'venv', 'diff2html')} {self.local_output_path}"
+                cmd = f"cp -rp {path_join(current_path, 'venv', 'diff2html')} {self.local_output_path}"
                 run_cmd(cmd)
             self.store_to_report_dir(self.local_output_path, src_space)
-            source_diffcov_html = path_join(root_path, "venv", "diffcov.html")
+            source_diffcov_html = path_join(current_path, "venv", "diffcov.html")
             target_diffcov_html = path_join(self.local_output_path, "diff2html", self.p_record.plus_name + ".html")
 
             self.get_diff_cov_to_html(path_join(src_space, "diffcov.txt"), source_diffcov_html, target_diffcov_html)
