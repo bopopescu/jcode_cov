@@ -61,7 +61,7 @@ class CoverageDispatcher(object):
         """
         mkdir_p(self.local_output_path)
 
-        local_time = time_now_stat()
+        local_time = time_now_st()
 
         exec_name_s = f"{self.p_record.plus_name}_{local_time}_jacoco.exec"
         exec_name_f = path_join(self.local_output_path, exec_name_s)

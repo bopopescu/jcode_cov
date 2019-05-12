@@ -288,7 +288,7 @@ def path_join(*args):
     return os.path.join(*args)
 
 
-def time_now_dyna():
+def time_now_dyn():
     """
     Get the local time dynamically
     :return time object
@@ -297,7 +297,7 @@ def time_now_dyna():
     return local_time_now
 
 
-def time_now_stat():
+def time_now_st():
     """
     Get the local time statically
     :return time object
