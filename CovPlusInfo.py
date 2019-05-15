@@ -18,8 +18,8 @@ from qcs_env_coverage.venv.bs4 import BeautifulSoup
 
 
 def get_login_data():
-    url = "https://ssosv.sankuai.com/login?service=https%3A%2F%2Fsso.sankuai.com%2Fproxy%3FclientService%3Dhttp%253A" \
-          "%252F%252Fplus.sankuai.com%252Flogin%253Furl%253Dhttp%25253A%25252F%25252Fplus.sankuai.com%25252F "
+    url = "https://ssosv.sk.com/login?service=https%3A%2F%2Fsso.sk.com%2Fproxy%3FclientService%3Dhttp%253A" \
+          "%252F%252Fplus.sk.com%252Flogin%253Furl%253Dhttp%25253A%25252F%25252Fplus.sk.com%25252F "
     info = requests.get(url, verify=False)
     sleep(1)
     soup = BeautifulSoup(info.text, "html.parser")
@@ -28,8 +28,8 @@ def get_login_data():
     login_data = {
         "username": "ep.delicious",
         "password": "Meishitest123",
-        "service": "https://sso.sankuai.com/proxy?clientService=http%3A%2F%2Fplus.sankuai.com"
-                   "%2Flogin%3Furl%3Dhttp%253A%252F%252Fplus.sankuai.com%252F",
+        "service": "https://sso.sk.com/proxy?clientService=http%3A%2F%2Fplus.sk.com"
+                   "%2Flogin%3Furl%3Dhttp%253A%252F%252Fplus.sk.com%252F",
         "lt": inputs[-3].attrs["value"],
         "execution": inputs[-1].attrs["value"],
         "_eventId": "submit",
@@ -56,10 +56,10 @@ def get_login_data():
         "sign": sign,
     }
     logger.info(plus_param)
-    plus_url = "http://plus.sankuai.com/login?url=http://plus.sankuai.com/"
+    plus_url = "http://plus.sk.com/login?url=http://plus.sk.com/"
     headers = {
         "Cookie": cookie,
-        "Host": "plus.sankuai.com",
+        "Host": "plus.sk.com",
         "User-Agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_10_5) AppleWebKit/537.36 (KHTML, like Gecko) "
                       "Chrome/54.0.2840.71 Safari/537.36",
         "Upgrade-Insecure-Requests": "1",
@@ -85,7 +85,7 @@ def get_login_data():
 
 class PlusRecord(object):
     def __init__(self, plus_name, template_name, ip, branch, git_url=None):
-        self.base_url = "http://plus.sankuai.com"
+        self.base_url = "http://plus.sk.com"
         self.plus_name = plus_name
         self.template_name = template_name
         self.username = "lqJempWcnpmaoaWp"
