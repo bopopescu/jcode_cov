@@ -27,7 +27,7 @@ class CoverageDispatcher(object):
     def __init__(self, plus_name, template_name, host_ip, branch, git_url=None):
         self.coverage_info = {}
         self.p_record = PlusRecord(plus_name, template_name, host_ip, branch, git_url)
-        self.service_server_username = "sankuai"
+        self.service_server_username = "sk"
         self.service_server_userhome = path_join("/home", self.service_server_username)
         self.file_server_hostname = "YmJeal5iaGxfaGk="
         self.file_server_passwd = "lqKkpZ-cqGljYw=="
