@@ -205,6 +205,6 @@ if __name__ == "__main__":
     template_n = "test"
     plus_n = "meituan.qcs.service.messagecenter"
 
-    p_record = PlusRecord(plus_n, template_n, "10.21.250.248", "master")
+    p_record = PlusRecord(plus_n, template_n, "10.21.250.248", "main")
     if p_record.git_url is None:
         p_record.output_init_info()

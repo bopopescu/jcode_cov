@@ -485,21 +485,21 @@ def main():
         port = "6300"
 
     if branch is None:
-        logger.info("未填写代码branch，默认为master")
-        branch = "master"
+        logger.info("未填写代码branch，默认为main")
+        branch = "main"
 
     if git_url:
-        coverage_master = CoverageDispatcher(plus_name, template_name, host_ip, branch, git_url)
+        coverage_main = CoverageDispatcher(plus_name, template_name, host_ip, branch, git_url)
     else:
-        coverage_master = CoverageDispatcher(plus_name, template_name, host_ip, branch)
+        coverage_main = CoverageDispatcher(plus_name, template_name, host_ip, branch)
 
-        if not coverage_master.p_record.flag:
+        if not coverage_main.p_record.flag:
             logger.error("获取plus配置失败")
             return
 
     if action == "clean":
         logger.info("clean操作：开始清理覆盖率数据")
-        coverage_master.clean(port)
+        coverage_main.clean(port)
 
     elif action == "dump":
         logger.info("dump操作：开始dump远程覆盖率数据")
@@ -510,7 +510,7 @@ def main():
             logger.error("dump操作未填写-c classes参数")
             return
 
-        coverage_master.dump(classes, port, jobname, args.old_commit, args.new_commit, args.old_branch,
+        coverage_main.dump(classes, port, jobname, args.old_commit, args.new_commit, args.old_branch,
                              args.job_url)
 
 
